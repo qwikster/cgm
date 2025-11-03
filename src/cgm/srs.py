@@ -1,0 +1,1 @@
+# Definitions of the tomfuckery that is Super Rotation System (rotation and wallkicks)
