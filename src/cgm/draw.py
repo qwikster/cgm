@@ -35,4 +35,49 @@ def draw_board(board,                              # from game.py. Board: 2d lis
                hold: str | None = None,            # hold = "t"
                next_queue: list[str] | None = None # list of 5 pieces like ["t", "i", "z", "s", "o"] (7-bag)
                ):
-    pass
+    validate_board(board)
+    height = len(board)
+    width = len(board[0])
+    
+    # display on top of static board then check collision in game.py so it doesn't lag render loop
+    overlay = [[cell[:] for cell in row] for row in board]
+    if active_piece:
+        pid = active_piece["name"]
+        shape = pieces[pid]["rotations"][active_piece["rotation"]]
+        px, py = active_piece["pos"]
+        for y, row in enumerate(shape):
+            for x, val in enumerate(row):
+                if val:
+                    bx, by = px + x, py + y
+                    if 0 <= bx < width and 0 <= by < height:
+                        overlay[by][bx] = [1, pid]
+    
+    # UI builder (hold and next)
+    right_lines = []
+    if hold and hold in pieces:
+        for line in pieces[hold]["piece"]:
+            right_lines.append(f"│{line.center(8)}│") # should already be centered but why not do it again
+    else:
+        right_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
+    right_lines.append("├────────┤")
+    right_lines.append("│ HOLD ▲ │")
+    right_lines.append("│ NEXT ▼ │")
+    right_lines.append("├────────┤")
+    
+    if next_queue:
+        for name in next_queue[:5]:
+            if name in pieces:
+                for line in pieces[name]["piece"]:
+                    right_lines.append(f"│{line.center(8)}│")
+            else:
+                right_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
+            right_lines.append("├────────┤")
+    else:
+        right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤"] * 5)
+        
+    # make sure it's tall enough (it should be)
+    while len(right_lines) < height + 1:
+        right_lines.append("│        │")
+        
+    for i in right_lines: # TODO: REMOVE
+        print(i)
