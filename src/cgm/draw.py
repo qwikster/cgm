@@ -5,8 +5,13 @@ from pieces import pieces
 
 BLOCK = "██"
 EMPTY = "  "
-RESET = "\x1b[0m"
-CLEAR = "\033[2J\033[H"
+
+def validate_board(board): # check for dimensions in case game loop fucked me
+    if len(board) != 22:
+        raise ValueError(f"Board has {len(board)} rows")
+    widths = {len(r) for r in board}
+    if widths != {10}:
+        raise ValueError(f"Board has rows not 10 wide - {widths}")
 
 def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}
     # Gets the cells in a falling piece with its current rotation and coordinates on the board
