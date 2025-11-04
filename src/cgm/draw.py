@@ -40,7 +40,7 @@ def draw_board(board,                              # from game.py. Board: 2d lis
     width = len(board[0])
     
     # display on top of static board then check collision in game.py so it doesn't lag render loop
-    overlay = [[cell[:] for cell in row] for row in board]
+    overlay = [[cell[:] for cell in row] for row in board] # already the full board, needs to be colored
     if active_piece:
         pid = active_piece["name"]
         shape = pieces[pid]["rotations"][active_piece["rotation"]]
@@ -59,10 +59,10 @@ def draw_board(board,                              # from game.py. Board: 2d lis
             right_lines.append(f"│{line.center(8)}│") # should already be centered but why not do it again
     else:
         right_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
-    right_lines.append("├────────┤")
+    right_lines.append("╞════════╡")
     right_lines.append("│ HOLD ▲ │")
     right_lines.append("│ NEXT ▼ │")
-    right_lines.append("├────────┤")
+    right_lines.append("╞════════╡")
     
     if next_queue:
         for name in next_queue[:5]:
@@ -74,10 +74,18 @@ def draw_board(board,                              # from game.py. Board: 2d lis
             right_lines.append("├────────┤")
     else:
         right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤"] * 5)
+    right_lines.append("│ LINES: │")
+    
+    frame_lines = []
+    frame_lines.append("╭" + "──" * width + "┬────────╮")
+    
+    for y in range(height):
+        row_buf = ["│"]
+        for x in range(width):
+            cell = overlay[y][x]
+            row_buf.append(color_block(cell[1]) if cell[0] else EMPTY)
+        right = right_lines[y] if y < len(right_lines) else "│        │"
+        frame_lines.append("".join(row_buf) + right)
         
-    # make sure it's tall enough (it should be)
-    while len(right_lines) < height + 1:
-        right_lines.append("│        │")
-        
-    for i in right_lines: # TODO: REMOVE
+    for i in frame_lines:
         print(i)
