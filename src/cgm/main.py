@@ -47,9 +47,10 @@ if __name__ == "__main__":
             [[1, "j"], [1, "o"], [1, "o"], [1, "l"], [1, "l"], [1, "t"], [1, "z"], [1, "z"], [1, "t"], [1, "t"]],
             [[1, "i"], [1, "i"], [1, "i"], [1, "i"], [1, "t"], [1, "t"], [1, "t"], [1, "z"], [1, "z"], [1, "t"]],
         ]
-        piece = {"name": "i", "pos": (0, 0), "rotation": "0"}
         start = time.perf_counter()
-        draw_board(board, piece, 696969, "Gm", 480000, 123, 999, "t", ["j", "l", "s", "z", "o"])
+        for i in range(20):
+            piece = {"name": "i", "pos": (0, i), "rotation": "0"}
+            draw_board(board, piece, 696969, "Gm", 480000, 123, 999, "t", ["j", "l", "s", "z", "o"])
         end = time.perf_counter()
         print(f"Took {end - start} seconds")
     except KeyboardInterrupt:

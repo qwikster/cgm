@@ -77,7 +77,7 @@ def draw_board(board,                              # from game.py. Board: 2d lis
     right_lines.append("│ LINES: │")
     
     frame_lines = []
-    frame_lines.append("╭" + "──" * width + "┬────────╮")
+    frame_lines.append("╭" + "─" * (width - 3) + "╢CGM1╟" + "─" * (width - 3) + "┬────────╮")
     
     for y in range(height):
         row_buf = ["│"]
@@ -86,6 +86,17 @@ def draw_board(board,                              # from game.py. Board: 2d lis
             row_buf.append(color_block(cell[1]) if cell[0] else EMPTY)
         right = right_lines[y] if y < len(right_lines) else "│        │"
         frame_lines.append("".join(row_buf) + right)
-        
-    for i in frame_lines:
-        print(i)
+    
+    frame_lines.append("├" + "──" * width + f"┤{lines:>3}/{line_goal:<4}│")
+    frame_lines.append(f"│ {format_time(time_ms)} | {score:07} │ GR: {grade:<3}│")
+    frame_lines.append("╰" + "──" * width + "┴────────╯")
+    
+    term = shutil.get_terminal_size()
+    frame_width = len(frame_lines[0])
+    pad_x = max((term.columns - frame_width) // 2, 0)
+    pad_y = max((term.lines - len(frame_lines)) // 2, 0)
+    
+    centered = ("\n" * pad_y) + "\n".join(" " * pad_x + ln for ln in frame_lines)
+    
+    sys.stdout.write("\x1b[H" + centered + "\n\n")
+    sys.stdout.flush()
