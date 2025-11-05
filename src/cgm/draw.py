@@ -2,7 +2,7 @@
 # Module for drawing to the screen (stdout tomfuckery time!!!)
 import sys
 import shutil
-from pieces import pieces
+from pieces import pieces, grades
 
 BLOCK = "██"
 EMPTY = "  "
@@ -51,45 +51,57 @@ def draw_board(board,                              # from game.py. Board: 2d lis
                     bx, by = px + x, py + y
                     if 0 <= bx < width and 0 <= by < height:
                         overlay[by][bx] = [1, pid]
-    
-    # UI builder (hold and next)
-    right_lines = []
+                        
+    left_lines = []
+    left_lines.append("│ HOLD ▼ │")
+    left_lines.append("╞════════╡")
     if hold and hold in pieces:
         for line in pieces[hold]["piece"]:
-            right_lines.append(f"│{line.center(8)}│") # should already be centered but why not do it again
+            left_lines.append(f"│{line.center(8)}│") # should already be centered but why not do it again
     else:
-        right_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
-    right_lines.append("╞════════╡")
-    right_lines.append("│ HOLD ▲ │")
+        left_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
+    left_lines.append("╰────────┤")
+    for i in grades[grade]:
+        left_lines.append(i + "│")
+        
+    right_lines = []
     right_lines.append("│ NEXT ▼ │")
     right_lines.append("╞════════╡")
     
     if next_queue:
-        for name in next_queue[:5]:
+        for num, name in enumerate(next_queue[:5]):
             if name in pieces:
                 for line in pieces[name]["piece"]:
                     right_lines.append(f"│{line.center(8)}│")
             else:
                 right_lines.extend(["│   ╲╱   │", "│   ╱╲   │"])
-            right_lines.append("├────────┤")
+            right_lines.append("├────────┤" if num != 4 else "├────────╯")
     else:
-        right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤"] * 5)
-    right_lines.append("│ LINES: │")
+        for i in range(5):
+            right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤" if i != 4 else "├────────╯"])
+    right_lines.append( "│         ")
+    right_lines.append( "│ LINES:  ")
+    right_lines.append(f"│  \x1b[4m{str(lines)}\x1b[24m")
+    right_lines.append(f"│  {str(line_goal).ljust(9)}")
     
     frame_lines = []
-    frame_lines.append("╭" + "─" * (width - 3) + "╢CGM1╟" + "─" * (width - 3) + "┬────────╮")
+    
+    score = str(score) if len(str(score)) % 2 == 0 else ("0" + str(score))
+    wid = (width - (len(score) // 2)) - 1
+    frame_lines.append("╭────────┬"  + "─" * (wid) + f"╢{score}╟" + "─" * (wid) + "┬────────╮")
     
     for y in range(height):
-        row_buf = ["│"]
+        row_buf = []
         for x in range(width):
             cell = overlay[y][x]
             row_buf.append(color_block(cell[1]) if cell[0] else EMPTY)
-        right = right_lines[y] if y < len(right_lines) else "│        │"
-        frame_lines.append("".join(row_buf) + right)
+        right = right_lines[y] if y < len(right_lines) else "│         "
+        left = left_lines[y] if y < len(left_lines) else "         │"
+        frame_lines.append(left + "".join(row_buf) + right)
     
-    frame_lines.append("├" + "──" * width + f"┤{lines:>3}/{line_goal:<4}│")
-    frame_lines.append(f"│ {format_time(time_ms)} | {score:07} │ GR: {grade:<3}│")
-    frame_lines.append("╰" + "──" * width + "┴────────╯")
+    frame_lines.append( "         ├" + "──" * width + "┤")
+    frame_lines.append(f"         │ ▶ {format_time(time_ms):^14}◀  │")
+    frame_lines.append( "         ╰" + "──" * width + "╯")
     
     term = shutil.get_terminal_size()
     frame_width = len(frame_lines[0])

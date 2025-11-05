@@ -1,28 +1,19 @@
 # Main module
+import os
 import sys
-from pieces import pieces
+from pieces import pieces, grades
 from draw import draw_board
 import time
 
 def entry():
-    while(1):
-        for rot in ["0", "r", "2", "l"]:
-            for k in pieces:
-                for i in pieces[k]["rotations"][rot]:
-                    r, g, b = pieces[k]["rgb"]
-                    print(f"\x1b[38;2;{r};{g};{b}m", end = "")
-                    for j in i:
-                        if j:
-                            print("██", end="")
-                        else:
-                            print("  ", end="")
-                    print()
-            time.sleep(0.3)
-            print("\033[2J\033[H")
+    pass
 
 if __name__ == "__main__":
+    entry()
+    
     try:
         # entry()
+        os.system("clear")
         board = [
             [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0]],
             [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0]],
@@ -48,9 +39,11 @@ if __name__ == "__main__":
             [[1, "i"], [1, "i"], [1, "i"], [1, "i"], [1, "t"], [1, "t"], [1, "t"], [1, "z"], [1, "z"], [1, "t"]],
         ]
         start = time.perf_counter()
-        for i in range(20):
-            piece = {"name": "i", "pos": (0, i), "rotation": "0"}
-            draw_board(board, piece, 696969, "Gm", 480000, 123, 999, "t", ["j", "l", "s", "z", "o"])
+        for _ in range(40):
+            for j in ["0", "r", "2", "l"]:
+                piece = {"name": "t", "pos": (3, 0), "rotation": j}
+                draw_board(board, piece, 1696969, "Gm", 480000, 123, 999, "t", ["j", "l", "s", "z", "o"])
+                time.sleep(0.05)
         end = time.perf_counter()
         print(f"Took {end - start} seconds")
     except KeyboardInterrupt:
