@@ -80,7 +80,7 @@ def draw_board(board,                              # from game.py. Board: 2d lis
         for i in range(5):
             right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤" if i != 4 else "├────────╯"])
     right_lines.append( "│         ")
-    right_lines.append( "│ LINES:  ")
+    right_lines.append( "│ LEVEL:  ")
     right_lines.append(f"│  \x1b[4m{str(lines)}\x1b[24m")
     right_lines.append(f"│  {str(line_goal).ljust(9)}")
     
