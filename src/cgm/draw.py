@@ -5,7 +5,8 @@ import shutil
 from pieces import pieces, grades
 
 BLOCK = "██"
-EMPTY = "  "
+EMPTY = "\x1b[48;2;20;20;20m  \x1b[49m"
+TOP_EMPTY = "  "
 
 def validate_board(board): # check for dimensions in case game loop fucked me
     if len(board) != 22:
@@ -94,7 +95,11 @@ def draw_board(board,                              # from game.py. Board: 2d lis
         row_buf = []
         for x in range(width):
             cell = overlay[y][x]
-            row_buf.append(color_block(cell[1]) if cell[0] else EMPTY)
+            if y > 1:
+                row_buf.append(color_block(cell[1]) if cell[0] else EMPTY)
+            else:
+                row_buf.append(color_block(cell[1]) if cell[0] else TOP_EMPTY)
+                
         right = right_lines[y] if y < len(right_lines) else "│         "
         left = left_lines[y] if y < len(left_lines) else "         │"
         frame_lines.append(left + "".join(row_buf) + right)
