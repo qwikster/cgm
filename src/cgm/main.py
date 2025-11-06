@@ -1,58 +1,11 @@
 # Main module
 import os
 import sys
-from pieces import pieces, grades, thresholds
+from tables import pieces, grades, thresholds
 from draw import draw_board
 from game import lock_piece
+from player import Player
 import time
-
-class Player:
-    def __init__(self):
-        self.score = 0
-        self.time_ms = 0
-        self.start_time = time.perf_counter()
-        self.grade = "9"
-        self.level = 0
-        self.line_goal = 0
-        self.hold_piece = ""
-        self.active_piece = {}
-        
-        # checks for midgame
-        self.can_gm = True
-        self.met_gm_condition_300 = False
-        self.met_gm_condition_500 = False
-        self.met_gm_condition_999 = False
-    
-    def check_grade(self):
-        self.upd_time()
-        
-        # checking for GM eligibility (called every piece, so it'll be up to date)
-        if not self.met_gm_condition_300 and self.level >= 300:
-            if self.time_ms <= 225000 and self.can_gm and self.score >= 12000: # 4m 15s 
-                self.met_gm_condition_300 = True
-            else:
-                self.can_gm = False
-                
-        if not self.met_gm_condition_500 and self.level >= 500:
-            if self.time_ms <= 450000 and self.can_gm and self.score >= 40000: # 7m 30s 
-                self.met_gm_condition_500 = True
-            else:
-                self.can_gm = False
-            
-        for name, val in thresholds: # actually set grade
-            if name == "Gm":
-                if self.level >= 999:
-                    self.grade = name # GAME END
-                else:
-                    self.grade = "S9"
-                    return
-            if self.score >= val:
-                self.grade = name
-            else:
-                break
-    
-    def upd_time(self):
-        self.time_ms = int((time.perf_counter() - self.start_time) * 1000)
         
 def render_loop(board, player, next_queue):
     pass

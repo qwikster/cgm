@@ -1,5 +1,5 @@
 # core logic like lock, gravity, and scoring
-from pieces import pieces
+from tables import pieces
 
 def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}
     # Gets the cells in a falling piece with its current rotation and coordinates on the board

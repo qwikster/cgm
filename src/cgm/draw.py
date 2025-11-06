@@ -2,7 +2,7 @@
 # Module for drawing to the screen (stdout tomfuckery time!!!)
 import sys
 import shutil
-from pieces import pieces, grades
+from tables import pieces, grades
 
 BLOCK = "██"
 EMPTY = "\x1b[48;2;20;20;20m  \x1b[49m"
