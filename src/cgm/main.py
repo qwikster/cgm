@@ -3,12 +3,13 @@ import os
 import sys
 from tables import pieces, grades, thresholds
 from draw import draw_board
-from game import lock_piece
+from game import lock_piece, get_next
 from player import Player
 import time
+import threading
         
 def render_loop(board, player, next_queue):
-    pass
+    draw_board(board, player.active_piece, )
 
 def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
@@ -16,10 +17,15 @@ def setup_board(rows, cols):
 
 def entry():
     player = Player()
-    time.sleep(3)
-    player.upd_time()
-    print(player.time_ms)
+    board = setup_board(22, 10)
+    next_queue = get_next(5)
+    
+    player.active_piece = {"name": "t", "pos": (3, 0), "rotation": "0"}
+    draw_board(board, player.active_piece, player.score, player.grade, player.time_ms, player.level, player.line_goal, player.hold_piece, next_queue)
     input()
+    
+    render_thread = threading.Thread(target=render_loop, args=(board, player, next_queue))
+    render_thread.start()
 
 if __name__ == "__main__":
     entry()
@@ -27,7 +33,7 @@ if __name__ == "__main__":
     try:
         # entry()
         os.system("clear")
-        board = setup_board(22, 10)
+        
         start = time.perf_counter()
         for _ in range(40):
             for j in ["9", "8", "7", "6", "5", "4", "3", "2", "1", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "Gm"]:

@@ -1,5 +1,18 @@
 # core logic like lock, gravity, and scoring
 from tables import pieces
+import random
+
+PIECE_BAG = list(pieces.keys())
+bag = []
+next_bag = []
+
+def get_next(bag_size: int = 5):
+    global next_bag, bag, PIECE_BAG
+    while len(bag) < bag_size:
+        if len(next_bag) == 0:
+            next_bag = random.sample(PIECE_BAG, len(PIECE_BAG))
+        bag.append(bag.pop)
+    return bag
 
 def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}
     # Gets the cells in a falling piece with its current rotation and coordinates on the board
