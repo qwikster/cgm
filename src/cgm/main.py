@@ -3,7 +3,7 @@ import os
 import sys
 from tables import pieces, grades, thresholds
 from draw import draw_board
-from game import lock_piece
+from game import lock_piece, collides
 from player import Player
 from bag import Bag
 import time
@@ -57,8 +57,18 @@ def entry():
         sigint.set()
     
     while(1):
-        player.active_piece = {"name": bag.get_piece(), "pos": (3, 0), "rotation": "0"}
+        player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
         input()
+
+        last_y = player.active_piece["pos"][1]
+        
+        for i in range(0, 22): # can use this for a shadow piece later and it works for hard drop logic :)
+            player.active_piece["pos"][1] = i
+            if collides(player.active_piece, board):
+                player.active_piece["pos"][1] = last_y
+                board, cleared = lock_piece(player.active_piece, board)
+                break
+            last_y = i
 
 if __name__ == "__main__":    
     try:
