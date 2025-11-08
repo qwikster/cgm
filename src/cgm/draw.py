@@ -3,8 +3,10 @@
 import sys
 import shutil
 from tables import pieces, grades
+from game import collides
 
 BLOCK = "██"
+SHADOW = "▒▒"
 EMPTY = "\x1b[48;2;20;20;20m\x1b[38;2;40;40;40m[]\x1b[49m\x1b[39m"
 TOP_EMPTY = "  "
 
@@ -22,10 +24,13 @@ def format_time(ms: int) -> str: # for TGM style timer at the bottom
     return f"{minutes:02}:{seconds:02}:{hundredths:02}"
 
 def color_block(piece_id: str | None): # in ["i", "z", "s", "l", "j", "t", "o"]
-    if (not piece_id) or (piece_id not in pieces):
+    if (not piece_id) and (not piece_id.endswith("_sh")):
         return EMPTY
-    r, g, b = pieces[piece_id]["rgb"]
-    return f"\x1b[38;2;{r};{g};{b}m{BLOCK}\x1b[0m" # color, block ascii, reset
+    if not piece_id.endswith("_sh"):
+        r, g, b = pieces[piece_id]["rgb"]
+        return f"\x1b[38;2;{r};{g};{b}m{BLOCK}\x1b[0m"
+    else:
+        return f"\x1b[38;2;130;130;130m{SHADOW}\x1b[0m"
 
 # public
 def draw_board(board,                              # from game.py. Board: 2d list. Entries: [0] or [1, "t"]. 
@@ -42,6 +47,28 @@ def draw_board(board,                              # from game.py. Board: 2d lis
     
     # display on top of static board then check collision in game.py so it doesn't lag render loop
     overlay = [[cell[:] for cell in row] for row in board] # already the full board, needs to be colored
+    
+    # SHADOW PIECE
+    if active_piece:
+        pid = active_piece["name"]
+        shape = pieces[pid]["rotations"][active_piece["rotation"]]
+        px, py = active_piece["pos"]
+        
+        drop_y = py
+        while True:
+            drop_y += 1    
+            if collides({"name": pid, "rotation": active_piece["rotation"], "pos": [px, drop_y]}, board):
+                drop_y -= 1
+                break
+        
+        for y, row in enumerate(shape):
+            for x, val in enumerate(row):
+                if val:
+                    bx, by = px + x, drop_y + y
+                    if 0 <= bx < width and 0 <= by < height:
+                        overlay[by][bx] = [1, f"{pid}_sh"]
+    
+    # ACTUAL PIECE
     if active_piece:
         pid = active_piece["name"]
         shape = pieces[pid]["rotations"][active_piece["rotation"]]
