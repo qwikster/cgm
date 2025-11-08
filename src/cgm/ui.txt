@@ -53,5 +53,4 @@ hold lockout (state)
 bgm
 sfx
 menu and game over / restart logic
-GHOST BLOCK
 skill of some kind

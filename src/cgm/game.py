@@ -23,7 +23,7 @@ def collides(piece, board):
 def lock_piece(piece, board, player):
     if collides(piece, board):
         if piece["pos"][1] == 0:
-            return board, True
+            return board, 0, True
         else:
             raise ValueError("Tried to lock piece over another piece (and it wasn't a loss)")
     for i in get_cells(piece):
@@ -38,7 +38,7 @@ def lock_piece(piece, board, player):
     
     update_level(player, cleared)
 
-    return board, False
+    return board, cleared, False
 
 def clear_lines(board):
     new_board = []

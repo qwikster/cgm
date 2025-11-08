@@ -67,8 +67,18 @@ def render_loop(shared, player, bag, fps):
         else:
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded")
 
-def game_loop(shared, player, bag, fps):
-    fall_interval = player.get_grav() # TODO: make dynamic
+def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line Delay
+    from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES, MAX_LOCK_RESETS
+    FRAME = 1 / fps
+    
+    LOCK_DELAY = LOCK_DELAY_FRAMES * FRAME
+    ARE_DELAY = ARE_FRAMES * FRAME
+    LINE_CLEAR_DELAY = LINE_CLEAR_FRAMES * FRAME
+    
+    state = "spawn"
+    lock_timer = 0.0
+    lock_resets = 0
+    phase_timer = 0.0
     fall_time = time.perf_counter()
     
     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
@@ -76,25 +86,58 @@ def game_loop(shared, player, bag, fps):
     while not sigint.is_set():
         now = time.perf_counter()
         elapsed = now-fall_time
+        fall_interval = player.get_grav() # s/cell
         
-        if elapsed >= fall_interval:
-            fall_time = now
-            with board_lock:
-                board = shared["board"]
-                player.active_piece["pos"][1] += 1
-                
-                if collides(player.active_piece, board):
-                    player.active_piece["pos"][1] -= 1 # move this back if it starts to cause issues
-                    board, cleared = lock_piece(player.active_piece, board, player)
-                    shared["board"] = board
+        with board_lock:
+            board = shared["board"]
+            
+            if state == "active":
+                if elapsed >= fall_interval:
+                    fall_time = now
+                    player.active_piece["pos"][1] += 1
                     
-                    if cleared:
-                        lose.set()
-                        return
+                    if collides(player.active_piece, board):
+                        player.active_piece["pos"][1] -= 1
+                        lock_timer += fall_interval
+                        if lock_timer >= LOCK_DELAY:
+                            board, cleared, lose = lock_piece(player.active_piece, board, player)
+                            shared["board"] = board
+                        
+                            if lose:
+                                lose.set()
+                                return
+                            elif cleared:
+                                state = "line_clear"
+                                phase_timer = 0.0
+                                player.active_piece = {}
+                            
+                            lock_timer = 0.0
+                            lock_resets = 0
+                            continue
 
-                    player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
-
-        time.sleep(0.01)
+                    else:
+                        lock_timer = 0.0
+                        lock_resets = 0
+            
+            elif state == "line_clear":
+                phase_timer += FRAME
+                if phase_timer >= LINE_CLEAR_DELAY:
+                    state = "are"
+                    phase_timer = 0.0
+                
+            elif state == "are":
+                phase_timer += FRAME
+                if phase_timer >= ARE_DELAY:
+                    player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+                    fall_time = now
+                    state = "active"
+                
+            elif state == "spawn":
+                player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
+                fall_time = now
+                state = "active"
+                
+        time.sleep(FRAME)
 
 
 def entry():
