@@ -110,6 +110,9 @@ def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line De
                                 state = "line_clear"
                                 phase_timer = 0.0
                                 player.active_piece = {}
+                            else:
+                                state = "are"
+                                phase_timer = 0.0
                             
                             lock_timer = 0.0
                             lock_resets = 0
