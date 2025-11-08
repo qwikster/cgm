@@ -65,7 +65,6 @@ def get_score(level, lines_cleared, combo, board_empty, soft):
     bravo = 4 if board_empty else 1
     
     score = (math.ceil((level + lines_cleared) / 4) + soft) * lines_cleared * combo * bravo
-    print(score, lines_cleared, combo, bravo, level)
     return score, combo
 
 def update_level(player, cleared):

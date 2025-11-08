@@ -5,7 +5,7 @@ import shutil
 from tables import pieces, grades
 
 BLOCK = "██"
-EMPTY = "\x1b[48;2;20;20;20m  \x1b[49m"
+EMPTY = "\x1b[48;2;20;20;20m\x1b[38;2;40;40;40m[]\x1b[49m\x1b[39m"
 TOP_EMPTY = "  "
 
 def validate_board(board): # check for dimensions in case game loop fucked me
@@ -82,7 +82,7 @@ def draw_board(board,                              # from game.py. Board: 2d lis
             right_lines.extend(["│   ╲╱   │", "│   ╱╲   │", "├────────┤" if i != 4 else "├────────╯"])
     right_lines.append( "│         ")
     right_lines.append( "│ LEVEL:  ")
-    right_lines.append(f"│  \x1b[4m{str(lines)}\x1b[24m")
+    right_lines.append(f"│  \x1b[4m{str(lines):^3}\x1b[24m")
     right_lines.append(f"│  {str(line_goal).ljust(9)}")
     
     frame_lines = []

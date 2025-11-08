@@ -1,7 +1,7 @@
 # module containing the Player class and its functions
 
 import time
-from tables import thresholds
+from tables import thresholds, gravity
 
 class Player:
     def __init__(self):
@@ -10,7 +10,7 @@ class Player:
         self.start_time = time.perf_counter()
         self.grade = "9"
         self.level = 0
-        self.line_goal = 0
+        self.line_goal = 100
         self.hold_piece = ""
         self.active_piece = {}
         
@@ -63,4 +63,14 @@ class Player:
         return False
     
     def get_grav(self):
-        return 
+        keys = sorted(gravity.keys())
+        current_g = gravity[0]
+        for k in keys:
+            if self.level >= k:
+                current_g = gravity[k]
+            else: 
+                break
+            
+        if current_g <= 0:
+            return float('inf')
+        return (256 / current_g) / 60.0
