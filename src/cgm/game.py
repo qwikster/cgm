@@ -30,7 +30,13 @@ def lock_piece(piece, board, player):
         board[i[1]][i[0]] = [1, piece["name"]]
         
     board, cleared = clear_lines(board)
-    # player.score += get_score(cleared) # FIX
+    board_empty = all(cell[0] for row in board for cell in row)
+    soft = player.soft
+    
+    score_gain, player.combo = get_score(player.level, cleared, player.combo, board_empty, soft)
+    player.score += score_gain
+    player.level += 1 + cleared
+
     return board, False
 
 def clear_lines(board):
@@ -48,7 +54,7 @@ def clear_lines(board):
     
     return new_board, cleared
 
-def get_score(level, lines_cleared, combo, board_empty):
+def get_score(level, lines_cleared, combo, board_empty, soft):
     if lines_cleared == 0:
         return 0, 1 # 0 score, reset combo
     
@@ -57,5 +63,6 @@ def get_score(level, lines_cleared, combo, board_empty):
         combo = 1
     bravo = 4 if board_empty else 1
     
-    score = math.ceil((level + lines_cleared) / 4) * lines_cleared * combo * bravo
+    score = (math.ceil((level + lines_cleared) / 4) + soft) * lines_cleared * combo * bravo
+    print(score, lines_cleared, combo, bravo, level)
     return score, combo

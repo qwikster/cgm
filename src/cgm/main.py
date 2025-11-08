@@ -23,6 +23,20 @@ signal.signal(signal.SIGINT, sigint_handler)
 
 def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
+    for name, val in enumerate(board[0]):
+        board[21][name] = [1, "t"]
+        board[21][3] = [0]
+        board[21][4] = [0]
+        board[21][5] = [0]
+        board[20][name] = [1, "t"]
+        board[20][3] = [0]
+        board[20][4] = [0]
+        board[20][5] = [0]
+        board[19][name] = [1, "t"]
+        board[19][3] = [0]
+        board[19][4] = [0]
+        board[19][5] = [0]
+        
     return board
 
 def render_loop(shared, player, bag, fps):
@@ -55,8 +69,7 @@ def render_loop(shared, player, bag, fps):
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded")
 
 def game_loop(shared, player, bag, fps):
-    gravity_timer = 0
-    fall_interval = 0.2 # TODO: make dynamic
+    fall_interval = player.get_grav() # TODO: make dynamic
     fall_time = time.perf_counter()
     
     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
@@ -79,8 +92,7 @@ def game_loop(shared, player, bag, fps):
                     if cleared:
                         lose.set()
                         return
-                    
-                    player.level += 1 # one piece placed
+
                     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
 
         time.sleep(0.01)

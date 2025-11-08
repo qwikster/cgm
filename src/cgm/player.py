@@ -19,6 +19,8 @@ class Player:
         self.met_gm_condition_300 = False
         self.met_gm_condition_500 = False
         self.met_gm_condition_999 = False
+        
+        self.combo = 0
     
     def upd_time(self):
         self.time_ms = int((time.perf_counter() - self.start_time) * 1000)    
