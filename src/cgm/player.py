@@ -21,6 +21,7 @@ class Player:
         self.met_gm_condition_999 = False
         
         self.combo = 0
+        self.soft = 0
     
     def upd_time(self):
         self.time_ms = int((time.perf_counter() - self.start_time) * 1000)    
@@ -61,5 +62,5 @@ class Player:
             return True        
         return False
     
-    def get_linegoal(self):
+    def get_grav(self):
         return 

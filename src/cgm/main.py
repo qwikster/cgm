@@ -44,7 +44,6 @@ def render_loop(shared, player, bag, fps):
     while not sigint.is_set():
         if lose.is_set():
             return
-        
         with board_lock:
             board = shared["board"]
         

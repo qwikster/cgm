@@ -31,11 +31,12 @@ def lock_piece(piece, board, player):
         
     board, cleared = clear_lines(board)
     board_empty = all(cell[0] for row in board for cell in row)
-    soft = player.soft
+    soft = player.soft # TODO: ADD SOFT, OR SOFT DROP CALC
     
     score_gain, player.combo = get_score(player.level, cleared, player.combo, board_empty, soft)
     player.score += score_gain
-    player.level += 1 + cleared
+    
+    update_level(player, cleared)
 
     return board, False
 
@@ -66,3 +67,26 @@ def get_score(level, lines_cleared, combo, board_empty, soft):
     score = (math.ceil((level + lines_cleared) / 4) + soft) * lines_cleared * combo * bravo
     print(score, lines_cleared, combo, bravo, level)
     return score, combo
+
+def update_level(player, cleared):
+    if player.level >= 999:
+        player.line_goal = 999
+        player.level = 999
+        return
+    
+    old_level = player.level
+    temp = old_level + 1 + int(cleared)
+    temp = 999 if temp > 999 else temp
+        
+    old_sect = old_level // 100
+    new_sect = temp // 100
+    
+    if new_sect > old_sect and cleared == 0:
+        temp = min(temp, (old_sect * 100 + 99))
+        
+    player.level = min(temp, 999)
+    
+    if player.level > 900:
+        player.line_goal = 999
+    else:
+        player.line_goal = ((player.level // 100) + 1) * 100

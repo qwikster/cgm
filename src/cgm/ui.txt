@@ -38,24 +38,18 @@
 Gm - 245 191 3
 
 to add:
-grades + Gm + score to next rank + time thresholds
-timer
 IRS + IHS
 SRS and kick tables
 t spin detection
-level system (piece = +1, clear line = +1, t spin = +10)
 gravity and 20G
 hold
-next queue (7 bag)
 lock delay
-line clears and scoring (animation)
 ARE (entry delay)
 line clear delay
 DAS/ARR
 soft / hard drop
 rebindable movement controls
 hold lockout (state)
-spawn validation (game over state)
 bgm
 sfx
 menu and game over / restart logic
