@@ -12,6 +12,7 @@ import signal
 
 sigint = threading.Event()
 lose = threading.Event()
+board_lock = threading.Lock()
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -24,11 +25,14 @@ def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
     return board
 
-def render_loop(board, player, bag, fps):
+def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
     while not sigint.is_set():
         if lose.is_set():
             return
+        
+        with board_lock:
+            board = shared["board"]
         
         start = time.perf_counter()
         player.upd_time()
@@ -50,9 +54,9 @@ def render_loop(board, player, bag, fps):
         else:
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded")
 
-def game_loop(board, player, bag, fps):
+def game_loop(shared, player, bag, fps):
     gravity_timer = 0
-    fall_interval = 1.0 # TODO: make dynamic
+    fall_interval = 0.2 # TODO: make dynamic
     fall_time = time.perf_counter()
     
     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
@@ -63,27 +67,35 @@ def game_loop(board, player, bag, fps):
         
         if elapsed >= fall_interval:
             fall_time = now
-            player.active_piece["pos"][1] += 1
-            if collides(player.active_piece, board):
-                player.active_piece["pos"][1] -= 1 # move this back if it starts to cause issues
-                board, cleared = lock_piece(player.active_piece, board)
-                if cleared:
-                    lose.set()
-                    return
-                player.level += 1 # one piece placed
-                player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
-        time.sleep(1.0 / fps)
+            with board_lock:
+                board = shared["board"]
+                player.active_piece["pos"][1] += 1
+                
+                if collides(player.active_piece, board):
+                    player.active_piece["pos"][1] -= 1 # move this back if it starts to cause issues
+                    board, cleared = lock_piece(player.active_piece, board, player)
+                    shared["board"] = board
+                    
+                    if cleared:
+                        lose.set()
+                        return
+                    
+                    player.level += 1 # one piece placed
+                    player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
+
+        time.sleep(0.01)
 
 
 def entry():
     player = Player()
     bag = Bag(preview_size=5)
-    board = setup_board(22, 10)
+    shared = { "board": setup_board(22, 10) }
+    
     try:
-        render_thread = threading.Thread(target=render_loop, args=(board, player, bag, 60))
+        render_thread = threading.Thread(target=render_loop, args=(shared, player, bag, 60))
         render_thread.start()
         
-        game_thread = threading.Thread(target=game_loop, args=(board, player, bag, 60))
+        game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, 60))
         game_thread.start()
     except KeyboardInterrupt:
         sigint.set()
