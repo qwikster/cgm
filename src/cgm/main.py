@@ -11,6 +11,7 @@ import threading
 import signal
 
 sigint = threading.Event()
+lose = threading.Event()
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -26,6 +27,9 @@ def setup_board(rows, cols):
 def render_loop(board, player, bag, fps):
     frame_time = 1.0 / fps
     while not sigint.is_set():
+        if lose.is_set():
+            return
+        
         start = time.perf_counter()
         player.upd_time()
         draw_board(
@@ -44,7 +48,32 @@ def render_loop(board, player, bag, fps):
         if sleep_time > 0:
             time.sleep(sleep_time)
         else:
-            raise TimeoutError("running under 60fps!")
+            print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded")
+
+def game_loop(board, player, bag, fps):
+    gravity_timer = 0
+    fall_interval = 1.0 # TODO: make dynamic
+    fall_time = time.perf_counter()
+    
+    player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+    
+    while not sigint.is_set():
+        now = time.perf_counter()
+        elapsed = now-fall_time
+        
+        if elapsed >= fall_interval:
+            fall_time = now
+            player.active_piece["pos"][1] += 1
+            if collides(player.active_piece, board):
+                player.active_piece["pos"][1] -= 1 # move this back if it starts to cause issues
+                board, cleared = lock_piece(player.active_piece, board)
+                if cleared:
+                    lose.set()
+                    return
+                player.level += 1 # one piece placed
+                player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
+        time.sleep(1.0 / fps)
+
 
 def entry():
     player = Player()
@@ -53,22 +82,11 @@ def entry():
     try:
         render_thread = threading.Thread(target=render_loop, args=(board, player, bag, 60))
         render_thread.start()
+        
+        game_thread = threading.Thread(target=game_loop, args=(board, player, bag, 60))
+        game_thread.start()
     except KeyboardInterrupt:
         sigint.set()
-    
-    while(1):
-        player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
-        input()
-
-        last_y = player.active_piece["pos"][1]
-        
-        for i in range(0, 22): # can use this for a shadow piece later and it works for hard drop logic :)
-            player.active_piece["pos"][1] = i
-            if collides(player.active_piece, board):
-                player.active_piece["pos"][1] = last_y
-                board, cleared = lock_piece(player.active_piece, board)
-                break
-            last_y = i
 
 if __name__ == "__main__":    
     try:

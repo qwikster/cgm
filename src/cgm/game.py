@@ -21,10 +21,10 @@ def collides(piece, board):
 
 def lock_piece(piece, board):
     if collides(piece, board):
-        if piece["pos"][0] == 0:
+        if piece["pos"][1] == 0:
             return board, True
-        raise ValueError("Tried to lock piece over another piece (and it wasn't a loss)")
+        else:
+            raise ValueError("Tried to lock piece over another piece (and it wasn't a loss)")
     for i in get_cells(piece):
-        print(i)
         board[i[1]][i[0]] = [1, piece["name"]]
     return board, False
