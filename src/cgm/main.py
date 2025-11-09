@@ -16,6 +16,11 @@ from controls import InputHandler
 sigint = threading.Event()
 lose = threading.Event()
 board_lock = threading.Lock()
+ROT_SEQ = ["0", "r", "2", "l"]
+
+def rotate(current, direction):
+    i = ROT_SEQ.index(current)
+    return ROT_SEQ[(i + direction) % len(ROT_SEQ)]
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -28,8 +33,14 @@ def setup_board(rows, cols):
     return board
 
 def input_handler(player, board, action):
-    if action == "quit":
+    if action == "pause":
         sigint.set()
+    elif action == "move_left":
+        player.active_piece["pos"][0] -= 1
+    elif action == "move_right":
+        player.active_piece["pos"][0] += 1
+    elif action == "rotate_cw":
+        player.active_piece["rotation"] = rotate(player.active_piece["rotation"], +1)
 
 def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
@@ -59,7 +70,7 @@ def render_loop(shared, player, bag, fps):
         else:
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded\x1b[0m")
 
-def game_loop(shared, player, bag, inputs, fps): # TODO: Set up ARE, Lock Delay, Line Delay
+def game_loop(shared, player, bag, inputs, fps):
     from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES, MAX_LOCK_RESETS
     FRAME = 1 / fps
     
@@ -89,7 +100,7 @@ def game_loop(shared, player, bag, inputs, fps): # TODO: Set up ARE, Lock Delay,
             except queue.Empty:
                 pass
             
-            if state == "active":
+            if state == "active": # ADD HIGH SPEED GRAVITY
                 if elapsed >= fall_interval:
                     fall_time = now
                     player.active_piece["pos"][1] += 1

@@ -43,10 +43,6 @@ SRS and kick tables
 t spin detection
 gravity and 20G
 hold
-lock delay
-ARE (entry delay)
-line clear delay
-DAS/ARR
 soft / hard drop
 rebindable movement controls
 hold lockout (state)
@@ -54,3 +50,9 @@ bgm
 sfx
 menu and game over / restart logic
 skill of some kind
+
+# TODO: BUG: HITTING MOVEMENT WHEN NO ACTIVE PIECE BREAKS IT, SHOULD BE SIMPLE TO FIX
+# TODO: BUG: FIX GRAVITY OVER 1G/C
+# TODO: NEXT: COLLISION DETECTION FOR MOVEMENT
+# TODO: AFTER: HARD AND SOFT drop
+# TODO: AFTER: SRS AND PROPER ROTATIONS (180)
