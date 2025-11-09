@@ -1,14 +1,17 @@
 # Main module
 import os
 import sys
+import time
+import threading
+import signal
+import queue
+
 from tables import pieces, grades, thresholds
 from draw import draw_board
 from game import lock_piece, collides
 from player import Player
 from bag import Bag
-import time
-import threading
-import signal
+from controls import InputHandler
 
 sigint = threading.Event()
 lose = threading.Event()
@@ -23,6 +26,10 @@ signal.signal(signal.SIGINT, sigint_handler)
 def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
     return board
+
+def input_handler(player, board, action):
+    if action == "quit":
+        sigint.set()
 
 def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
@@ -52,7 +59,7 @@ def render_loop(shared, player, bag, fps):
         else:
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded\x1b[0m")
 
-def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line Delay
+def game_loop(shared, player, bag, inputs, fps): # TODO: Set up ARE, Lock Delay, Line Delay
     from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES, MAX_LOCK_RESETS
     FRAME = 1 / fps
     
@@ -76,6 +83,12 @@ def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line De
         with board_lock:
             board = shared["board"]
             
+            try:
+                action = inputs.queue.get_nowait()
+                input_handler(player, board, action)
+            except queue.Empty:
+                pass
+            
             if state == "active":
                 if elapsed >= fall_interval:
                     fall_time = now
@@ -85,10 +98,10 @@ def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line De
                         player.active_piece["pos"][1] -= 1
                         lock_timer += fall_interval
                         if lock_timer >= LOCK_DELAY:
-                            board, cleared, lose = lock_piece(player.active_piece, board, player)
+                            board, cleared, loss = lock_piece(player.active_piece, board, player)
                             shared["board"] = board
                         
-                            if lose:
+                            if loss:
                                 lose.set()
                                 return
                             elif cleared:
@@ -126,25 +139,26 @@ def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line De
                 state = "active"
                 
         time.sleep(FRAME)
-
-def input_loop(player):
-    pass
+    inputs.stop()
 
 def entry():
     player = Player()
     bag = Bag(preview_size=5)
     shared = { "board": setup_board(22, 10) }
     
+    inputs = InputHandler()
+    inputs.start()
+    
     try:
         render_thread = threading.Thread(target=render_loop, args=(shared, player, bag, 60))
         render_thread.start()
         
-        game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, 60))
+        game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, inputs, 60))
         game_thread.start()
         
-        # input
     except KeyboardInterrupt:
         sigint.set()
+        inputs.stop()
         game_thread.join()
         render_thread.join()
 

@@ -14,5 +14,5 @@ controls = {
     "rotate_ccw": ["z", "q"],
     "rotate_180": ["\t", "x"], # tab
     "hold": ["e", "v"],
-    "pause": ["p"]
+    "pause": ["\x1b", "p"],
 }
