@@ -10,6 +10,9 @@ SHADOW = "▒▒"
 EMPTY = "\x1b[48;2;20;20;20m\x1b[38;2;40;40;40m[]\x1b[49m\x1b[39m"
 TOP_EMPTY = "  "
 
+termwidth = 0
+termheight = 0
+
 def validate_board(board): # check for dimensions in case game loop fucked me
     if len(board) != 22:
         raise ValueError(f"Board has {len(board)} rows")
@@ -139,6 +142,11 @@ def draw_board(board,                              # from game.py. Board: 2d lis
     frame_width = len(frame_lines[0])
     pad_x = max((term.columns - frame_width) // 2, 0)
     pad_y = max((term.lines - len(frame_lines)) // 2, 0)
+    
+    global termwidth, termheight
+    if pad_x != termwidth or pad_y != termheight:
+        sys.stdout.write("\x1b[H\x1b[2J")
+        termwidth, termheight = pad_x, pad_y
     
     centered = ("\n" * pad_y) + "\n".join(" " * pad_x + ln for ln in frame_lines)
     

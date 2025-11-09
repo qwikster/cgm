@@ -16,27 +16,12 @@ board_lock = threading.Lock()
 
 def sigint_handler(sig, frame):
     sigint.set()
-    print("goodbye!")
-    sys.exit(0)
+    print("\x1b[2j\x1b[Hgoodbye!")
 
 signal.signal(signal.SIGINT, sigint_handler)
 
 def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
-    for name, val in enumerate(board[0]):
-        board[21][name] = [1, "t"]
-        board[21][3] = [0]
-        board[21][4] = [0]
-        board[21][5] = [0]
-        board[20][name] = [1, "t"]
-        board[20][3] = [0]
-        board[20][4] = [0]
-        board[20][5] = [0]
-        board[19][name] = [1, "t"]
-        board[19][3] = [0]
-        board[19][4] = [0]
-        board[19][5] = [0]
-        
     return board
 
 def render_loop(shared, player, bag, fps):
@@ -65,7 +50,7 @@ def render_loop(shared, player, bag, fps):
         if sleep_time > 0:
             time.sleep(sleep_time)
         else:
-            print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded")
+            print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded\x1b[0m")
 
 def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line Delay
     from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES, MAX_LOCK_RESETS
@@ -142,6 +127,8 @@ def game_loop(shared, player, bag, fps): # TODO: Set up ARE, Lock Delay, Line De
                 
         time.sleep(FRAME)
 
+def input_loop(player):
+    pass
 
 def entry():
     player = Player()
@@ -154,8 +141,12 @@ def entry():
         
         game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, 60))
         game_thread.start()
+        
+        # input
     except KeyboardInterrupt:
         sigint.set()
+        game_thread.join()
+        render_thread.join()
 
 if __name__ == "__main__":    
     try:
