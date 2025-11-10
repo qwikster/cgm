@@ -96,7 +96,7 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
         piece["pos"][1] += 1
         if collides(piece, board):
             piece["pos"][1] -= 1
-            return "ground", 0.0
+            return "ground"
         player.soft += 1
         return None
     
@@ -154,6 +154,7 @@ def render_loop(shared, player, bag, fps):
         
         start = time.perf_counter()
         player.upd_time()
+        print("\x1b[H\x1b[2J")
         draw_board(
             board,
             player.active_piece,
@@ -174,7 +175,7 @@ def render_loop(shared, player, bag, fps):
 
 def game_loop(shared, player, bag, inputs, fps):
     from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES
-    FRAME = 1 / fps
+    FRAME = 1.0 / fps
     
     LOCK_DELAY = LOCK_DELAY_FRAMES * FRAME
     ARE_DELAY = ARE_FRAMES * FRAME
@@ -184,45 +185,55 @@ def game_loop(shared, player, bag, inputs, fps):
     lock_timer = 0.0
     phase_timer = 0.0
     
-    player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+    last_time = time.perf_counter()
+    
+    if not hasattr(player, "fall_progress"):
+        player.fall_progress = 0.0
     
     while not sigint.is_set():
+        now = time.perf_counter()
+        dt = now - last_time
+        last_time = now
+        if dt > 0.1:
+            dt = 0.1
+        
         with board_lock:
             board = shared["board"]
-            
-            try:
-                action = inputs.queue.get_nowait()
+            while True:
+                try:
+                    action = inputs.queue.get_nowait()
+                except queue.Empty:
+                    break
+                
                 new_state = input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME)
                 
                 if new_state == "ground":
-                    lock_timer += FRAME
+                    lock_timer += dt
                     if lock_timer >= LOCK_DELAY:
                         state, lock_timer = lock_and_are(player, board, shared)
                         if state == "loss":
                             return
                         phase_timer = 0.0
+                    continue
                 
                 if new_state in ("line_clear", "are", "loss"):
                     state = new_state
                     phase_timer = 0.0
                     player.hold_lock = False
-                    
-                    continue
-            except queue.Empty:
-                pass
+                    if state == "active":
+                        player.fall_progess = 0.0
+                    break
             
             player.check_grade()
             
-            if state == "active": # ADD HIGH SPEED GRAVITY
+            # gravity
+            if state == "active":
                 g_units = player.get_grav()
                 cells_per_frame = g_units / 256.0
-                
-                if not hasattr(player, "fall_progress"):
-                    player.fall_progress = 0.0
-                    
-                player.fall_progress += cells_per_frame
-                
+                cells_per_second = cells_per_frame * fps
+                player.fall_progress += cells_per_second * dt
                 cells_to_fall = int(player.fall_progress)
+                
                 if cells_to_fall > 0:
                     player.fall_progress -= cells_to_fall
                     piece = player.active_piece
@@ -231,7 +242,7 @@ def game_loop(shared, player, bag, inputs, fps):
                         piece["pos"][1] += 1
                         if collides(piece, board):
                             piece["pos"][1] -= 1
-                            lock_timer += FRAME
+                            lock_timer += dt
                             if lock_timer >= LOCK_DELAY:
                                 state, lock_timer = lock_and_are(player, board, shared)
                                 if state == "loss":
@@ -240,24 +251,46 @@ def game_loop(shared, player, bag, inputs, fps):
                             break
                     else:
                         lock_timer = 0.0
+                
+                piece = player.active_piece
+                temp_pos = piece["pos"].copy()
+                temp_pos[1] += 1
+                if collides({"name": piece["name"], "pos": temp_pos, "rotation": piece["rotation"]}, board):
+                    lock_timer += dt
+                if lock_timer >= LOCK_DELAY:
+                    state, lock_timer = lock_and_are(player, board, shared)
+                    if state == "loss":
+                        return
+                    phase_timer = 0.0
             
+            # pause after line clear
             elif state == "line_clear":
-                phase_timer += FRAME
+                phase_timer += dt
                 if phase_timer >= LINE_CLEAR_DELAY:
                     state = "are"
                     phase_timer = 0.0
-                
+            
+            # pause after a piece locking without soft drop
             elif state == "are":
-                phase_timer += FRAME
+                phase_timer += dt
                 if phase_timer >= ARE_DELAY:
                     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+                    player.fall_progress = 0.0
+                    lock_timer = 0.0
                     state = "active"
-                
+            
+            # first piece
             elif state == "spawn":
                 player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
+                player.fall_progress = 0.0
+                lock_timer = 0.0
                 state = "active"
-                
-        time.sleep(FRAME)
+        
+        elapsed_loop = time.perf_counter() - now
+        to_sleep = FRAME - elapsed_loop
+        time.sleep(to_sleep if to_sleep > 0 else 0)
+        
+    # sigint
     inputs.stop()
 
 def entry():
