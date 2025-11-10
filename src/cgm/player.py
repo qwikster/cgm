@@ -22,6 +22,7 @@ class Player:
         
         self.combo = 0
         self.soft = 0
+        self.hold_lock = False
     
     def upd_time(self):
         self.time_ms = int((time.perf_counter() - self.start_time) * 1000)    
@@ -41,7 +42,7 @@ class Player:
             else:
                 self.can_gm = False
             
-        for name, val in thresholds: # actually set grade
+        for name, val in thresholds.items(): # actually set grade
             if self.score >= val:
                 if not self.grade == "Gm":
                     self.grade = name

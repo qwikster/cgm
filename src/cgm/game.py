@@ -1,5 +1,5 @@
 # core logic like lock, gravity, and scoring
-from tables import pieces
+from tables import pieces, ROT_180, ROT_CCW, ROT_CW
 import math
 
 def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}
@@ -25,7 +25,7 @@ def lock_piece(piece, board, player):
         if piece["pos"][1] == 0:
             return board, 0, True
         else:
-            raise ValueError("Tried to lock piece over another piece (and it wasn't a loss)")
+            raise ValueError("Tried to lock outside the board or lock piece over another piece (and it wasn't a loss)")
     for i in get_cells(piece):
         board[i[1]][i[0]] = [1, piece["name"]]
         
@@ -89,3 +89,13 @@ def update_level(player, cleared):
         player.line_goal = 999
     else:
         player.line_goal = ((player.level // 100) + 1) * 100
+        
+def rotate(current, direction):
+    if direction == +1:
+        return ROT_CW[current]
+    elif direction == -1:
+        return ROT_CCW[current]
+    elif direction == 2:
+        return ROT_180[current]
+    raise ValueError("direction should be -1, +1, or 2.")
+    return current

@@ -6,9 +6,8 @@ import threading
 import signal
 import queue
 
-from tables import pieces, grades, thresholds
 from draw import draw_board
-from game import lock_piece, collides
+from game import lock_piece, collides, rotate
 from player import Player
 from bag import Bag
 from controls import InputHandler
@@ -17,10 +16,6 @@ sigint = threading.Event()
 lose = threading.Event()
 board_lock = threading.Lock()
 ROT_SEQ = ["0", "r", "2", "l"]
-
-def rotate(current, direction):
-    i = ROT_SEQ.index(current)
-    return ROT_SEQ[(i + direction) % len(ROT_SEQ)]
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -32,16 +27,67 @@ def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
     return board
 
-def input_handler(player, board, action):
+def input_handler(player, board, action, bag):
+    if not player.active_piece:
+        return
+    
+    piece = player.active_piece
+    x, y = piece["pos"]
+    
     if action == "pause":
         sigint.set()
-    elif action == "move_left":
-        player.active_piece["pos"][0] -= 1
-    elif action == "move_right":
-        player.active_piece["pos"][0] += 1
-    elif action == "rotate_cw":
-        player.active_piece["rotation"] = rotate(player.active_piece["rotation"], +1)
+        return
 
+    elif action == "move_left":
+        piece["pos"][0] -= 1
+        if collides(piece, board):
+            piece["pos"][0] += 1
+    
+    elif action == "move_right":
+        piece["pos"][0] += 1
+        if collides(piece, board):
+            piece["pos"][0] -= 1
+    
+    elif action == "soft_drop":
+        piece["pos"][1] += 1
+        if collides(piece, board):
+            piece["pos"][1] -= 1
+        player.soft += 1
+    
+    elif action == "hard_drop":
+        while not collides(piece, board):
+            piece["pos"][1] += 1
+        piece["pos"][1] -= 1
+    
+    elif action == "rotate_cw":
+        old_rot = piece["rotation"]
+        piece["rotation"] = rotate(old_rot, +1)
+        if collides(piece, board):
+            piece["rotation"] = old_rot
+            
+    elif action == "rotate_cwc":
+        old_rot = piece["rotation"]
+        piece["rotation"] = rotate(old_rot, -1)
+        if collides(piece, board):
+            piece["rotation"] = old_rot
+            
+    elif action == "rotate_180":
+        old_rot = piece["rotation"]
+        piece["rotation"] = rotate(old_rot, 2)
+        if collides(piece, board):
+            piece["rotation"] = old_rot
+            
+    elif action == "hold":
+        if player.hold_lock:
+            return
+        old = player.hold_piece
+        player.hold_piece = player.active_piece["name"]
+        if not old:
+            player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+        else:
+            player.active_piece = {"name": old, "pos": [3, 0], "rotation": "0"}
+        player.hold_lock = True
+    
 def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
     while not sigint.is_set():
@@ -96,9 +142,11 @@ def game_loop(shared, player, bag, inputs, fps):
             
             try:
                 action = inputs.queue.get_nowait()
-                input_handler(player, board, action)
+                input_handler(player, board, action, bag)
             except queue.Empty:
                 pass
+            
+            player.check_grade()
             
             if state == "active": # ADD HIGH SPEED GRAVITY
                 if elapsed >= fall_interval:
@@ -125,6 +173,7 @@ def game_loop(shared, player, bag, inputs, fps):
                             
                             lock_timer = 0.0
                             lock_resets = 0
+                            player.hold_lock = False
                             continue
 
                     else:
