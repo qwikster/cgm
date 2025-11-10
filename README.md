@@ -10,6 +10,9 @@ If you'd like to customise your controls, you may change them in `/src/cgm/confi
 
 To change DAS (how long until inputs repeat) and ARR (how fast inputs repeat), you'll have to do it under your OS' settings for now. On Windows, it should be under the Mouse and Keyboard controls. On KDE Plasma, under System Settings > Keyboard > Repeat Rate. On Mac, go ask Tim Cook. On Gnome, go ask Richard Stallman's left foot. Otherwise, I'm sure you can figure it out.
 
+## demo
+https://github.com/user-attachments/assets/2bfdf0e4-c4f9-45e6-83c1-1c018af42be3
+
 ## what
 Features:
 - Supports any terminal emulator, Windows or Linux. (Not tested on Mac but may work.)
