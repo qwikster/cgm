@@ -32,6 +32,9 @@ def lock_piece(piece, board, player):
     board_empty = all(cell[0] for row in board for cell in row)
     soft = player.soft # TODO: ADD SOFT, OR SOFT DROP CALC
     
+    if board_empty:
+        player.score += 2500
+    
     score_gain, player.combo = get_score(player.level, cleared, player.combo, board_empty, soft)
     player.score += score_gain
     

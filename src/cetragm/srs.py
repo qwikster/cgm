@@ -12,10 +12,10 @@ ROT_180 = {"0": "2", "2": "0", "r": "l", "l": "r"}
 JLSTZ_OFFSETS = {"0": (0,0), "r": (0,0), "2": (0,0), "l": (0,0)}
 
 I_OFFSETS = {
-    "0": (-1, 0),
-    "r": (1, 0),
-    "2": (0, 1),
-    "l": (0, -1),
+    "0": (0, 0),
+    "r": (0, 0),
+    "2": (0, 0),
+    "l": (0, 0),
 }
 
 # These kick tables are not my values, they're from the Super Rotation System (or Tetris Guideline)

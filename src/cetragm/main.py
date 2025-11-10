@@ -21,7 +21,6 @@ def sigint_handler(sig, frame):
 sigint = threading.Event()
 lose = threading.Event()
 board_lock = threading.Lock()
-ROT_SEQ = ["0", "r", "2", "l"]
 
 signal.signal(signal.SIGINT, sigint_handler)
 
@@ -30,16 +29,19 @@ def setup_board(rows, cols):
     return board
 
 def is_grounded(active_piece, board):
-    if not active_piece:
+    if not active_piece or "pos" not in active_piece:
         return False
-    temp_pos = list(active_piece["pos"])
+    temp_pos = active_piece["pos"][:]
     temp_pos[1] += 1
     return collides({"name": active_piece["name"], "rotation": active_piece["rotation"], "pos": temp_pos}, board)
 
 def get_minos(active_piece):
-    if not active_piece:
+    if not active_piece or "name" not in active_piece:
         return set()
-    rot_matrix = pieces[active_piece["name"].lower()]["rotations"][active_piece["rotation"]]
+    try:
+        rot_matrix = pieces[active_piece["name"].lower()]["rotations"][active_piece["rotation"]]
+    except KeyError:
+        return set()
     minos = set()
     for dy, row in enumerate(rot_matrix):
         for dx, cell in enumerate(row):
@@ -59,6 +61,7 @@ def lock_and_are(player, board, shared):
     player.fall_progress = 0.0
     player.hold_lock = False
     player.soft = 0
+    player.lock_resets = 0
     
     if cleared:
         return "line_clear", 0.0
@@ -77,17 +80,16 @@ def lock_now(player, board, shared, bag):
     if loss:
         lose.set()
         return "loss"
-    elif cleared:
-        player.active_piece = {}
-        player.fall_progress = 0.0
-        player.soft = 0
+    
+    player.active_piece = {}
+    player.fall_progress = 0.0
+    player.soft = 0
+    player.hold_lock = False
+    player.lock_resets = 0
+    if cleared:
         return "line_clear"
     else:
         player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
-        player.fall_progress = 0.0
-        player.soft = 0
-        player.hold_lock = False
-        player.lock_resets = 0
         return "active"
 
 def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
@@ -283,17 +285,18 @@ def game_loop(shared, player, bag, inputs, fps):
                             break
                     else:
                         lock_timer = 0.0
-                
-                piece = player.active_piece
-                temp_pos = piece["pos"].copy()
-                temp_pos[1] += 1
-                if collides({"name": piece["name"], "pos": temp_pos, "rotation": piece["rotation"]}, board):
-                    lock_timer += dt
-                if lock_timer >= LOCK_DELAY:
-                    state, lock_timer = lock_and_are(player, board, shared)
-                    if state == "loss":
-                        return
-                    phase_timer = 0.0
+                        
+                if state == "active":
+                    piece = player.active_piece
+                    temp_pos = piece["pos"].copy()
+                    temp_pos[1] += 1
+                    if collides({"name": piece["name"], "pos": temp_pos, "rotation": piece["rotation"]}, board):
+                        lock_timer += dt
+                        if lock_timer >= LOCK_DELAY:
+                            state, lock_timer = lock_and_are(player, board, shared)
+                            if state == "loss":
+                                return
+                            phase_timer = 0.0
             
             # pause after line clear
             elif state == "line_clear":
