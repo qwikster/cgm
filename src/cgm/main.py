@@ -12,14 +12,14 @@ from player import Player
 from bag import Bag
 from controls import InputHandler
 
+def sigint_handler(sig, frame):
+    sigint.set()
+    print("\x1b[2j\x1b[Hgoodbye!")
+
 sigint = threading.Event()
 lose = threading.Event()
 board_lock = threading.Lock()
 ROT_SEQ = ["0", "r", "2", "l"]
-
-def sigint_handler(sig, frame):
-    sigint.set()
-    print("\x1b[2j\x1b[Hgoodbye!")
 
 signal.signal(signal.SIGINT, sigint_handler)
 
@@ -27,16 +27,32 @@ def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
     return board
 
-def input_handler(player, board, action, bag):
+def _try_lock_piece(player, board, shared, bag, lock_timer, LOCK_DELAY):
+    board, cleared, loss = lock_piece(player.active_piece, board, player)
+    shared["board"] = board
+    
+    if loss:
+        lose.set()
+        return "loss", 0.0
+    elif cleared:
+        player.active_piece = {}
+        return "line_clear", 0.0
+    else:
+        player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+        player.hold_lock = False
+        player.fall_progress = 0.0
+        return "active", 0.0
+
+def input_handler(player, board, action, bag, shared, LOCK_DELAY):
     if not player.active_piece:
-        return
+        return None, 0.0 # state, lock_timer
     
     piece = player.active_piece
     x, y = piece["pos"]
     
     if action == "pause":
         sigint.set()
-        return
+        return None, 0.0
 
     elif action == "move_left":
         piece["pos"][0] -= 1
@@ -52,12 +68,14 @@ def input_handler(player, board, action, bag):
         piece["pos"][1] += 1
         if collides(piece, board):
             piece["pos"][1] -= 1
+            return None, 0.0
         player.soft += 1
     
     elif action == "hard_drop":
         while not collides(piece, board):
             piece["pos"][1] += 1
         piece["pos"][1] -= 1
+        return _try_lock_piece(player, board, shared, bag, 0.0, LOCK_DELAY)
     
     elif action == "rotate_cw":
         old_rot = piece["rotation"]
@@ -65,7 +83,7 @@ def input_handler(player, board, action, bag):
         if collides(piece, board):
             piece["rotation"] = old_rot
             
-    elif action == "rotate_cwc":
+    elif action == "rotate_ccw":
         old_rot = piece["rotation"]
         piece["rotation"] = rotate(old_rot, -1)
         if collides(piece, board):
@@ -79,14 +97,18 @@ def input_handler(player, board, action, bag):
             
     elif action == "hold":
         if player.hold_lock:
-            return
+            return None, 0.0
         old = player.hold_piece
         player.hold_piece = player.active_piece["name"]
         if not old:
             player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
+            player.fall_progress = 0.0
         else:
             player.active_piece = {"name": old, "pos": [3, 0], "rotation": "0"}
+            player.fall_progress = 0.0
         player.hold_lock = True
+    
+    return None, 0.0
     
 def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
@@ -142,7 +164,15 @@ def game_loop(shared, player, bag, inputs, fps):
             
             try:
                 action = inputs.queue.get_nowait()
-                input_handler(player, board, action, bag)
+                new_state, lock_timer = input_handler(player, board, action, bag, shared, LOCK_DELAY)
+                if new_state in ("line_clear", "are", "loss"):
+                    state = new_state
+                    phase_timer = 0.0
+                    player.hold_lock = False
+                    
+                    if state == "active":
+                        fall_time = now
+                    continue
             except queue.Empty:
                 pass
             
@@ -151,31 +181,20 @@ def game_loop(shared, player, bag, inputs, fps):
             if state == "active": # ADD HIGH SPEED GRAVITY
                 if elapsed >= fall_interval:
                     fall_time = now
-                    player.active_piece["pos"][1] += 1
+                    piece = player.active_piece
+                    piece["pos"][1] += 1
                     
-                    if collides(player.active_piece, board):
-                        player.active_piece["pos"][1] -= 1
+                    if collides(piece, board):
+                        piece["pos"][1] -= 1
                         lock_timer += fall_interval
                         if lock_timer >= LOCK_DELAY:
-                            board, cleared, loss = lock_piece(player.active_piece, board, player)
-                            shared["board"] = board
-                        
-                            if loss:
-                                lose.set()
+                            state, lock_timer = _try_lock_piece(player, board, shared, bag, lock_timer, LOCK_DELAY)
+                            if state == "loss":
                                 return
-                            elif cleared:
-                                state = "line_clear"
-                                phase_timer = 0.0
-                                player.active_piece = {}
-                            else:
-                                state = "are"
-                                phase_timer = 0.0
-                            
-                            lock_timer = 0.0
-                            lock_resets = 0
                             player.hold_lock = False
+                            phase_timer = 0.0
+                            fall_time = now
                             continue
-
                     else:
                         lock_timer = 0.0
                         lock_resets = 0
@@ -190,8 +209,8 @@ def game_loop(shared, player, bag, inputs, fps):
                 phase_timer += FRAME
                 if phase_timer >= ARE_DELAY:
                     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
-                    fall_time = now
                     state = "active"
+                    fall_time = time.perf_counter()
                 
             elif state == "spawn":
                 player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again

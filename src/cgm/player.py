@@ -23,6 +23,7 @@ class Player:
         self.combo = 0
         self.soft = 0
         self.hold_lock = False
+        self.fall_progress = 0.0
     
     def upd_time(self):
         self.time_ms = int((time.perf_counter() - self.start_time) * 1000)    
@@ -74,4 +75,4 @@ class Player:
             
         if current_g <= 0:
             return float('inf')
-        return (256 / current_g) / 60.0
+        return current_g
