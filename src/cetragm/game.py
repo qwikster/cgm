@@ -1,5 +1,5 @@
 # core logic like lock, gravity, and scoring
-from tables import pieces, ROT_180, ROT_CCW, ROT_CW
+from cetragm.tables import pieces, ROT_180, ROT_CCW, ROT_CW
 import math
 
 def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}

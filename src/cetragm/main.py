@@ -6,11 +6,11 @@ import threading
 import signal
 import queue
 
-from draw import draw_board
-from game import lock_piece, collides, rotate
-from player import Player
-from bag import Bag
-from controls import InputHandler
+from cetragm.draw import draw_board
+from cetragm.game import lock_piece, collides, rotate
+from cetragm.player import Player
+from cetragm.bag import Bag
+from cetragm.controls import InputHandler
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -174,7 +174,7 @@ def render_loop(shared, player, bag, fps):
             print("\x1b[H\x1b[31mRunning below 60fps!! Performance will be degraded\x1b[0m")
 
 def game_loop(shared, player, bag, inputs, fps):
-    from config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES
+    from cetragm.config import ARE_FRAMES, LINE_CLEAR_FRAMES, LOCK_DELAY_FRAMES
     FRAME = 1.0 / fps
     
     LOCK_DELAY = LOCK_DELAY_FRAMES * FRAME

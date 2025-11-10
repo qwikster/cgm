@@ -1,7 +1,7 @@
 # Module for binding and rebinding controls as well as taking input (threaded)
 # DAS/ARR logic
 
-from config import controls
+from cetragm.config import controls
 import termios
 import tty
 import os

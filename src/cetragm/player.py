@@ -1,7 +1,7 @@
 # module containing the Player class and its functions
 
 import time
-from tables import thresholds, gravity
+from cetragm.tables import thresholds, gravity
 
 class Player:
     def __init__(self):

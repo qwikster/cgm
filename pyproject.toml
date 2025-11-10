@@ -1,6 +1,6 @@
 [project]
 name = "cetragm"
-version = "0.1.0"
+version = "0.1.4"
 description = "Cetra Grand Master | An oddly familiar block stacker in the command line!"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -15,7 +15,8 @@ requires = ["uv_build >= 0.7.19, <0.9.0"]
 build-backend = "uv_build"
 
 [project.scripts]
-hackaclime = "cetragm.main:main"
+cgm = "cetragm.main:entry"
+cetragm = "cetragm.main:entry"
 
 [tool.setuptools.packages.find]
 where = ["src"]

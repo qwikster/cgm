@@ -2,8 +2,8 @@
 # Module for drawing to the screen (stdout tomfuckery time!!!)
 import sys
 import shutil
-from tables import pieces, grades
-from game import collides
+from cetragm.tables import pieces, grades
+from cetragm.game import collides
 
 BLOCK = "██"
 SHADOW = "▒▒"

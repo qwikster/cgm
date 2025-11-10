@@ -1,7 +1,7 @@
 # 7-bag randomizer
 
 import random
-from tables import pieces
+from cetragm.tables import pieces
 
 PIECE_BAG = list(pieces.keys())
 
