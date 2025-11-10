@@ -23,6 +23,7 @@ class Player:
         self.combo = 0
         self.soft = 0
         self.hold_lock = False
+        self.lock_resets = 0
         self.fall_progress = 0.0
     
     def upd_time(self):

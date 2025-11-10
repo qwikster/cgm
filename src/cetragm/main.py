@@ -32,7 +32,21 @@ def setup_board(rows, cols):
 def is_grounded(active_piece, board):
     if not active_piece:
         return False
+    temp_pos = list(active_piece["pos"])
+    temp_pos[1] += 1
+    return collides({"name": active_piece["name"], "rotation": active_piece["rotation"], "pos": temp_pos}, board)
 
+def get_minos(active_piece):
+    if not active_piece:
+        return set()
+    rot_matrix = pieces[active_piece["name"].lower()]["rotations"][active_piece["rotation"]]
+    minos = set()
+    for dy, row in enumerate(rot_matrix):
+        for dx, cell in enumerate(row):
+            if cell:
+                minos.add((active_piece["pos"][0] + dx, active_piece["pos"][1] + dy))
+    return minos
+    
 def lock_and_are(player, board, shared):
     board, cleared, loss = lock_piece(player.active_piece, board, player)
     shared["board"] = board
@@ -73,6 +87,7 @@ def lock_now(player, board, shared, bag):
         player.fall_progress = 0.0
         player.soft = 0
         player.hold_lock = False
+        player.lock_resets = 0
         return "active"
 
 def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
@@ -140,6 +155,7 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
             
         player.fall_progress = 0.0
         player.hold_lock = True
+        player.lock_resets = 0
         return None
     
     return None
@@ -190,6 +206,9 @@ def game_loop(shared, player, bag, inputs, fps):
     if not hasattr(player, "fall_progress"):
         player.fall_progress = 0.0
     
+    if not hasattr(player, "lock_resets"):
+        player.lock_resets = 0
+    
     while not sigint.is_set():
         now = time.perf_counter()
         dt = now - last_time
@@ -205,6 +224,9 @@ def game_loop(shared, player, bag, inputs, fps):
                 except queue.Empty:
                     break
                 
+                was_grounded = is_grounded(player.active_piece, board)
+                old_minos = get_minos(player.active_piece)
+                
                 new_state = input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME)
                 
                 if new_state == "ground":
@@ -216,13 +238,23 @@ def game_loop(shared, player, bag, inputs, fps):
                         phase_timer = 0.0
                     continue
                 
-                if new_state in ("line_clear", "are", "loss"):
+                if new_state in ("line_clear", "are", "loss", "active"):
                     state = new_state
                     phase_timer = 0.0
                     player.hold_lock = False
                     if state == "active":
-                        player.fall_progess = 0.0
+                        player.fall_progress = 0.0
                     break
+                
+                new_minos = get_minos(player.active_piece)
+                if new_minos != old_minos and was_grounded:
+                    now_grounded = is_grounded(player.active_piece, board)
+                    if now_grounded:
+                        player.lock_resets += 1
+                        if player.lock_resets <= 15:
+                            lock_timer = 0.0
+                    else:
+                        player.lock_resets = 0
             
             player.check_grade()
             
@@ -277,6 +309,7 @@ def game_loop(shared, player, bag, inputs, fps):
                     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
                     player.fall_progress = 0.0
                     lock_timer = 0.0
+                    player.lock_resets = 0
                     state = "active"
             
             # first piece
@@ -284,6 +317,7 @@ def game_loop(shared, player, bag, inputs, fps):
                 player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
                 player.fall_progress = 0.0
                 lock_timer = 0.0
+                player.lock_resets = 0
                 state = "active"
         
         elapsed_loop = time.perf_counter() - now
