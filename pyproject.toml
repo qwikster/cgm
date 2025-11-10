@@ -1,6 +1,6 @@
 [project]
 name = "cetragm"
-version = "0.1.4"
+version = "0.1.5"
 description = "Cetra Grand Master | An oddly familiar block stacker in the command line!"
 readme = "README.md"
 requires-python = ">=3.12"

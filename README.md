@@ -19,22 +19,21 @@ Features:
 - Dynamic gravity (speed) as your level increases
 - Scoring system
 - Gameplay timer
-- 7-bag piece drawing and standard NEStris rotation system
+- 7-bag piece drawing
 - 5-piece next queue and level display
 - Persistent TLS (or shadow piece)
 - TGM's 20G gravity after level 500
 - Proper ARE, lock delay, and line clear delay
 - Real-time gravity (not tied to frame rates)
+- The standard Super Rotation System and all its janky kicks!
 
 Drawbacks:
 - Requires manual ARR/DAS and can't press two keys at once
-- Very sub-par rotation system
 - Scoring is slightly off
 - Lack of theming or menus at all, as well as a lose state
 - No sound (background or effect)
 
 To add by next week:
-- The Super Rotation System and standard wallkicks
 - T-spins and detection for them
 - IHS and IRS (Inital Hold/Rotation System)
 - Full menu with configuration
