@@ -74,7 +74,7 @@ I_KICKS_180 = {
     ("l","r"): [(0,0), (0,-1), (0,1), (-1,0), (1,0), (-2,0), (2,0)],
 }
 
-def _select_kick_table(name: str):
+def _kick_table(name: str):
     n = name.lower()
     if n == "i":
         return I_KICKS
@@ -82,3 +82,47 @@ def _select_kick_table(name: str):
         return O_KICKS
     return JLSTZ_KICKS
 
+def _kick_table_180(name: str):
+    n = name.lower()
+    if n == "i":
+        return I_KICKS_180
+    if n == "o":
+        return O_KICKS
+    return JLSTZ_KICKS_180
+
+Pos = Tuple[int, int]
+CollidesFn = Callable[[str, str, Pos], bool]
+
+def rotate_srs(
+    name: str,
+    pos: Pos,
+    rot_label: str,
+    direction: int,
+    board,
+    collides_fn: CollidesFn
+) -> Tuple[str, Pos, bool]: # false if no kick
+    name = name.lower()
+    if rot_label not in ROT_SEQ:
+        raise ValueError("invalid rotation")
+    if direction not in (1, -1, 2):
+        return rot_label, pos, False
+    
+    to_label = rotate_label(rot_label, direction)
+    table = _kick_table_180(name) if direction == 2 else _kick_table(name)
+    
+    kicks = table.get((rot_label, to_label), [(0, 0)])
+    for dx, dy in kicks:
+        test_pos = (pos[0] + dx, pos[1] + dy)
+        if not collides_fn(name, to_label, test_pos):
+            return to_label, test_pos, True
+    return rot_label, pos, False
+    
+def apply_rotate(
+    piece: dict,
+    direction: int,
+    board,
+    collides_fn: CollidesFn
+) -> bool:
+    name = piece["name"]
+    pos = tuple(piece["pos"])
+    rot = piece["rotation"]
