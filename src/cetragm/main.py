@@ -7,10 +7,12 @@ import signal
 import queue
 
 from cetragm.draw import draw_board
-from cetragm.game import lock_piece, collides, rotate
+from cetragm.game import lock_piece, collides
 from cetragm.player import Player
 from cetragm.bag import Bag
 from cetragm.controls import InputHandler
+from cetragm.srs import rotate_srs
+from cetragm.tables import pieces
 
 def sigint_handler(sig, frame):
     sigint.set()
@@ -26,6 +28,10 @@ signal.signal(signal.SIGINT, sigint_handler)
 def setup_board(rows, cols):
     board = [[[0] for _ in range(cols)] for _ in range(rows)]
     return board
+
+def is_grounded(active_piece, board):
+    if not active_piece:
+        return False
 
 def lock_and_are(player, board, shared):
     board, cleared, loss = lock_piece(player.active_piece, board, player)
@@ -108,24 +114,18 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
         return lock_now(player, board, shared, bag)
     
     elif action == "rotate_cw":
-        old_rot = piece["rotation"]
-        piece["rotation"] = rotate(old_rot, +1)
-        if collides(piece, board):
-            piece["rotation"] = old_rot
+        rotate_srs(player.active_piece, +1, board, 
+            lambda n,r,p: collides({"name": n, "rotation": r, "pos": [p[0], p[1]]}, board))
         return None
             
     elif action == "rotate_ccw":
-        old_rot = piece["rotation"]
-        piece["rotation"] = rotate(old_rot, -1)
-        if collides(piece, board):
-            piece["rotation"] = old_rot
+        rotate_srs(player.active_piece, -1, board, 
+            lambda n,r,p: collides({"name": n, "rotation": r, "pos": [p[0], p[1]]}, board))
         return None
             
     elif action == "rotate_180":
-        old_rot = piece["rotation"]
-        piece["rotation"] = rotate(old_rot, 2)
-        if collides(piece, board):
-            piece["rotation"] = old_rot
+        rotate_srs(player.active_piece, 2, board, 
+            lambda n,r,p: collides({"name": n, "rotation": r, "pos": [p[0], p[1]]}, board))
         return None
             
     elif action == "hold":
@@ -135,10 +135,10 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
         player.hold_piece = player.active_piece["name"]
         if not old:
             player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
-            player.fall_progress = 0.0
         else:
             player.active_piece = {"name": old, "pos": [3, 0], "rotation": "0"}
-            player.fall_progress = 0.0
+            
+        player.fall_progress = 0.0
         player.hold_lock = True
         return None
     

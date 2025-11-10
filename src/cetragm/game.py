@@ -12,7 +12,6 @@ def get_cells(piece): # {"name": "i", "pos": (0, 0), "rotation": "0"}
     return cells
 
 def collides(piece, board):
-    # Check if the piece is colliding (will want to write a new one for srs.py)
     for (x, y) in get_cells(piece):
         if x < 0 or x >= len(board[0]) or y >= len(board):
             return True
