@@ -60,6 +60,7 @@ def lock_now(player, board, shared, bag):
     elif cleared:
         player.active_piece = {}
         player.fall_progress = 0.0
+        player.soft = 0
         return "line_clear"
     else:
         player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
@@ -103,7 +104,7 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
         while not collides(piece, board):
             piece["pos"][1] += 1
         piece["pos"][1] -= 1
-        player.soft += 20
+        player.soft += 4
         return lock_now(player, board, shared, bag)
     
     elif action == "rotate_cw":
@@ -182,15 +183,10 @@ def game_loop(shared, player, bag, inputs, fps):
     state = "spawn"
     lock_timer = 0.0
     phase_timer = 0.0
-    fall_time = time.perf_counter()
     
     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
     
     while not sigint.is_set():
-        now = time.perf_counter()
-        elapsed = now-fall_time
-        fall_interval = player.get_grav() # s/cell
-        
         with board_lock:
             board = shared["board"]
             
@@ -211,8 +207,6 @@ def game_loop(shared, player, bag, inputs, fps):
                     phase_timer = 0.0
                     player.hold_lock = False
                     
-                    if state == "active":
-                        fall_time = now
                     continue
             except queue.Empty:
                 pass
@@ -258,11 +252,9 @@ def game_loop(shared, player, bag, inputs, fps):
                 if phase_timer >= ARE_DELAY:
                     player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"}
                     state = "active"
-                    fall_time = time.perf_counter()
                 
             elif state == "spawn":
                 player.active_piece = {"name": bag.get_piece(), "pos": [3, 0], "rotation": "0"} # and again
-                fall_time = now
                 state = "active"
                 
         time.sleep(FRAME)
