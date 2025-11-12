@@ -1,102 +1,41 @@
-# Module for binding and rebinding controls as well as taking input (threaded)
-# DAS/ARR logic
+# das/arr with actual keydown *requires a pygame window
 
-from cetragm.config import controls
-import termios
-import tty
-import os
+import pygame
 import threading
 import queue
-import select
+import time
 import sys
 
+from cetragm.config import DAS_MS, ARR_MS, SOFT_ARR_MS, KEYMAP
+
 class InputHandler:
-    def __init__(self):
+    def __init__(self, keymap=None, window_size = (300, 300), hidden = False):
         self.queue = queue.Queue()
-        self.stop_flag = threading.Event()
-        self.is_windows = os.name == "nt"
-        self.fd = None
-        self.old_settings = None
-            
+        self._thread = None
+        self._running = False
+        self._pressed = set() # keys to ARR
+        self._repeat_state = {} # wait for das or repeat until x
+        self.keymap = keymap or KEYMAP
+        self.window_size = window_size
+        self.hidden = hidden
+        
+        self.DAS = DAS_MS / 1000.0
+        self.ARR = ARR_MS / 1000.0
+        self.SOFT_ARR = SOFT_ARR_MS / 100.0
+        
+        self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")} # what to apply DAS to
+        
     def start(self):
-        self.thread = threading.Thread(target=self._poll_loop, daemon=True)
-        self.thread.start()
+        pass
     
     def stop(self):
-        self.stop_flag.set()
-        if self.is_windows:
-            return
-        if self.fd is not None and self.old_settings is not None:
-            try:
-                termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
-            except termios.error:
-                pass
+        pass
     
-    def _poll_loop(self):
-        if self.is_windows:
-            self._poll_windows()
-        else:
-            self._poll_linux()
+    def movement_pressed(self):
+        pass
     
-    def _poll_windows(self):
-        import msvcrt
-        while not self.stop_flag.is_set():
-            if msvcrt.kbhit():
-                ch = msvcrt.getwch()
-                self._process_key(ch)
-            else:
-                threading.Event().wait(0.01)
+    def _enqueue(self, action):
+        pass
     
-    def _poll_linux(self):
-        try:
-            self.fd = os.open("/dev/tty", os.O_RDONLY)
-        except OSError:
-            self.fd = sys.stdin.fileno()
-            
-        if not os.isatty(self.fd):
-            print("not a tty!! failing out", file=sys.stderr)
-            return
-        
-        self.old_settings = termios.tcgetattr(self.fd)
-        tty.setcbreak(self.fd)
-        
-        try:
-            while not self.stop_flag.is_set():
-                r, _, _ = select.select([self.fd], [], [], 0.02)
-                if not r:
-                    continue
-                
-                try:
-                    ch = os.read(self.fd, 1).decode(errors="ignore")
-                except OSError as e:
-                    print("OSerror:", e, file=sys.stderr)
-                    break
-                
-                if not ch:
-                    continue
-                
-                if ch == "\x1b":
-                    seq = ch
-                    while select.select([self.fd], [], [], 0.001)[0]:
-                        seq += os.read(self.fd, 1).decode(errors="ignore")
-                    key = seq
-                else:
-                    key = ch
-                self._process_key(key)
-        finally:
-            if self.old_settings is not None and os.isatty(self.fd):
-                try:
-                    termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
-                except termios.error:
-                    pass
-            if self.fd not in (None, sys.stdin.fileno()):
-                try:
-                    os.close(self.fd)
-                except OSError as e:
-                    print(e, file=sys.stderr)
-          
-    def _process_key(self, key):
-        for action, binds in controls.items():
-            if key in binds:
-                self.queue.put(action)
-                break
+    def _run(self):
+        pass
