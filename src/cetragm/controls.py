@@ -26,16 +26,32 @@ class InputHandler:
         self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")} # what to apply DAS to
         
     def start(self):
-        pass
+        if self._running:
+            return
+        self._running = True
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
     
     def stop(self):
-        pass
+        self._running = False
+        try:
+            pygame.event.post(pygame.event.Event(pygame.QUIT)) # try to exit gracefully
+        except Exception:
+            pass
+        
+        if self.thread is not None: # if that doesn't work bonk it
+            self._thread.join(timeout= 0.25)
     
     def movement_pressed(self):
-        pass
+        return any(k in self._pressed for k in self._movement_keys)
     
     def _enqueue(self, action):
-        pass
-    
+        try:
+            self.queue.put_nowait(action)
+        except Exception:
+            pass
+        
     def _run(self):
-        pass
+        pygame.init()
+        flags = 0   
+        
