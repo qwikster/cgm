@@ -5,11 +5,12 @@ import threading
 import queue
 import time
 import sys
+import os
 
 from cetragm.config import DAS_MS, ARR_MS, SOFT_ARR_MS, KEYMAP
 
 class InputHandler:
-    def __init__(self, keymap=None, window_size = (300, 300), hidden = False):
+    def __init__(self, keymap=None, window_size = (200, 100), hidden = True):
         self.queue = queue.Queue()
         self._thread = None
         self._running = False
@@ -39,7 +40,7 @@ class InputHandler:
         except Exception:
             pass
         
-        if self.thread is not None: # if that doesn't work bonk it
+        if self._thread is not None: # if that doesn't work bonk it
             self._thread.join(timeout= 0.25)
     
     def movement_pressed(self):
@@ -52,6 +53,50 @@ class InputHandler:
             pass
         
     def _run(self):
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (20, 20)
+        
         pygame.init()
         flags = 0   
+        if self.hidden:
+            flags = pygame.NOFRAME
+        try:
+            screen = pygame.display.set_mode(self.window_size, flags)
+        except Exception:
+            screen = pygame.display.set_mode((320, 64))
+        pygame.display.set_caption("Focus for CGM input")
         
+        try: # attempt to auto-grab input, may not work on hyprland etc
+            pygame.event.set_blocked(None)
+            pygame.event.set_allowed([pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT])
+            pygame.event.set_keyboard_grab(True)
+            pygame.key.set_repeat() # turn off pygame native ARR
+        except Exception:
+            pass
+        
+        font = None
+        try:
+            font = pygame.font.Font(None, 18)
+        except Exception:
+            pass
+        
+        def _draw_message():
+            screen.fill((0, 100, 80))
+            lines = [
+                "this window gets input for CGM!",
+                "can't do it via terminal because",
+                "there's no press/release input.",
+                "press ESC to close this window,",
+                "and focus it to play!",
+                "-@qwik (ps rate 5 stars)"
+            ]
+            if font:
+                y = 6
+                for ln in lines:
+                    surf = font.render(ln, True, (220, 220, 220))
+                    screen.blit(surf, (8, y))
+                    y += surf.get_height() + 2
+            else:
+                pass
+            pygame.display.flip()
+        
+        _draw_message()
