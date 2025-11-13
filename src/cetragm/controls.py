@@ -100,3 +100,32 @@ class InputHandler:
             pygame.display.flip()
         
         _draw_message()
+        
+        last_time = time.monotonic()
+        while self._running:
+            now = time.monotonic()
+            dt = now - last_time
+            last_time = now
+            
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    self._enqueue("pause")
+                    self._running = False
+                    break
+                if ev.type == pygame.KEYDOWN:
+                    key = ev.key
+                    was_down = key in self._pressed
+                    self._pressed.add(key)
+                    
+                    self._repeat_state[key] = {
+                        "das_until": now + self.DAS,
+                        "next_repeat": now + self.DAS + self.ARR
+                    }
+                    
+                    action = self.keymap.get(key)
+                    if action is None:
+                        continue
+                    
+                    self._enqueue(action)
+                    
+            time.sleep(0.01)
