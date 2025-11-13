@@ -22,6 +22,20 @@ KEYMAP = {
     pygame.K_q: "rotate_ccw",
     pygame.K_ESCAPE: "pause",
 }
+""" # keymap for normal people
+KEYMAP = {
+    pygame.K_LEFT: "move_left",
+    pygame.K_RIGHT: "move_right",
+    pygame.K_DOWN: "soft_drop",
+    pygame.K_SPACE: "hard_drop",
+    pygame.K_LSHIFT: "hold",
+    pygame.K_a: "rotate_180",
+    pygame.K_UP: "rotate_cw",
+    pygame.K_x: "rotate_cw",
+    pygame.K_z: "rotate_ccw",
+    pygame.K_ESCAPE: "pause",
+}
+"""
 
 controls = {
     "move_left":  ["a", "j", "\x1b[D"], # left arrow

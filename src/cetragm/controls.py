@@ -22,7 +22,7 @@ class InputHandler:
         
         self.DAS = DAS_MS / 1000.0
         self.ARR = ARR_MS / 1000.0
-        self.SDF = SDF / 100.0
+        self.SDF = SDF / 1000.0
         
         self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")} # what to apply DAS to
         
@@ -53,7 +53,7 @@ class InputHandler:
             pass
         
     def _run(self):
-        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (20, 20)
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (30, 30)
         
         pygame.init()
         flags = 0   
@@ -147,22 +147,22 @@ class InputHandler:
                         st["next_repeat"] = now + self.ARR
                         self._repeat_state[key] = st
                         
-            held_soft = any(self.keymap.get(k) == "soft_drop" for k in self._pressed)
-            if held_soft:
-                sof_key = "__soft_drop__"
-                if sof_key not in self._repeat_state:
-                    self._repeat_state[sof_key] = {
-                        "das_until": now,
+            sd_keys = [k for k in self._pressed if self.keymap.get(k) == "soft_drop"]
+            if sd_keys:
+                key = "__soft_drop__"
+                st = self._repeat_state.get(key)
+                
+                if st is None:
+                    self._enqueue("soft_drop")
+                    self._repeat_state[key] = {
                         "next_repeat": now + self.SDF
                     }
-                    self._enqueue("soft_drop")
                 else:
-                    if now >= self._repeat_state[sof_key]["next_repeat"]:
+                    if now >= st["next_repeat"]:
                         self._enqueue("soft_drop")
-                        self._repeat_state[sof_key]["next_repeat"] = now + self.DAS
+                        st["next_repeat"] = now + self.SDF
             else:
-                if "__soft_drop__" in self._repeat_state:
-                    del self._repeat_state["__soft_drop__"]
+                self._repeat_state.pop("__soft_drop__", None)
                     
             time.sleep(0.01)
         
