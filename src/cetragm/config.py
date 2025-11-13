@@ -9,7 +9,7 @@ LOCK_DELAY_FRAMES = 30
 
 DAS_MS = 150
 ARR_MS = 50
-SOFT_ARR_MS = 50
+SDF = 50
 
 KEYMAP = {
     pygame.K_a: "move_left",

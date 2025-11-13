@@ -7,7 +7,7 @@ import time
 import sys
 import os
 
-from cetragm.config import DAS_MS, ARR_MS, SOFT_ARR_MS, KEYMAP
+from cetragm.config import DAS_MS, ARR_MS, SDF, KEYMAP
 
 class InputHandler:
     def __init__(self, keymap=None, window_size = (200, 100), hidden = True):
@@ -22,7 +22,7 @@ class InputHandler:
         
         self.DAS = DAS_MS / 1000.0
         self.ARR = ARR_MS / 1000.0
-        self.SOFT_ARR = SOFT_ARR_MS / 100.0
+        self.SDF = SDF / 100.0
         
         self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")} # what to apply DAS to
         
@@ -127,5 +127,50 @@ class InputHandler:
                         continue
                     
                     self._enqueue(action)
+                
+                elif ev.type == pygame.KEYUP:
+                    key = ev.key
+                    if key in self._pressed:
+                        self._pressed.remove(key)
+                    if key in self._repeat_state:
+                        del self._repeat_state[key]
+                        
+            now = time.monotonic()
+            for key, st in list(self._repeat_state.items()):
+                action = self.keymap.get(key)
+                if action not in ("move_left", "move_right"):
+                    continue
+                
+                if now >= st["das_until"]:
+                    if now >= st["next_repeat"]:
+                        self._enqueue(action)
+                        st["next_repeat"] = now + self.ARR
+                        self._repeat_state[key] = st
+                        
+            held_soft = any(self.keymap.get(k) == "soft_drop" for k in self._pressed)
+            if held_soft:
+                sof_key = "__soft_drop__"
+                if sof_key not in self._repeat_state:
+                    self._repeat_state[sof_key] = {
+                        "das_until": now,
+                        "next_repeat": now + self.SDF
+                    }
+                    self._enqueue("soft_drop")
+                else:
+                    if now >= self._repeat_state[sof_key]["next_repeat"]:
+                        self._enqueue("soft_drop")
+                        self._repeat_state[sof_key]["next_repeat"] = now + self.DAS
+            else:
+                if "__soft_drop__" in self._repeat_state:
+                    del self._repeat_state["__soft_drop__"]
                     
             time.sleep(0.01)
+        
+        try:
+            pygame.event.set_keyboard_grab(False)
+        except Exception:
+            pass
+        try:
+            pygame.quit()
+        except Exception:
+            pass
