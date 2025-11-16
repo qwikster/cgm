@@ -109,5 +109,56 @@ def run_main_menu(inputs):
             inputs.menu_mode = False
             return "quit"
 
+def run_settings_menu(inputs):
+    inputs.menu_mode = True
+    selected = 0
+    delta = 10
+    while True:
+        options = [
+            f"DAS: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
+            f"ARR: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
+            f"SDF: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
+            "Key Bindings",
+            "Back"
+        ]
+        draw_menu("Settings", options, selected)
+        time.sleep(1/60)
+        try:
+            action = inputs.queue.get_nowait()
+        except queue.Empty:
+            continue
+        if action == "up":
+            selected = (selected - 1) % len(options)
+        elif action == "down":
+            selected = (selected + 1) % len(options)
+        elif action == "back":
+            inputs.menu_mode = False
+            return
+        elif action == "select":
+            if selected == 3:
+                run_keybindings_menu(inputs)
+            elif selected == 4:
+                inputs.menu_mode = False
+                return
+        elif action == "left":
+            adj = -delta
+            if selected == 0:
+                config.DAS_MS = max(0, config.DAS_MS + adj)
+            elif selected == 1:
+                config.ARR_MS == max(0, config.ARR_MS + adj)
+            elif selected == 2:
+                config.SDF = max(0, config.SDF + adj)
+            inputs.update_config() # to add
+            save_config()
+        elif action == "right":
+            adj = delta
+            if selected == 0:
+                config.DAS_MS = max(0, config.DAS_MS + adj)
+            elif selected == 1:
+                config.ARR_MS == max(0, config.ARR_MS + adj)
+            elif selected == 2:
+                config.SDF = max(0, config.SDF + adj)
+            inputs.update_config() # to add
+            save_config()
 
 # need: input parser menu mod, space race (cheese race), main loop integ., setup, lose integ., lose screen for spacerace 
