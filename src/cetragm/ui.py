@@ -161,4 +161,59 @@ def run_settings_menu(inputs):
             inputs.update_config() # to add
             save_config()
 
+def run_keybindings_menu(inputs):
+    inputs.menu_mode = True
+    game_actions = ["move_left", "move_right", "soft_drop", "hard_drop", "rotate_cw", "rotate_ccw", "rotate_180", "hold", "pause"]
+    selected = 0
+    while True:
+        options = []
+        for act in game_actions:
+            key = next((k for k, v in config.KEYMAP.items() if v == act), None)
+            key_name = pygame.key.name(key) if key is not None else "Unbound"
+            options.append(f"{act.replace('_', " ").title()}: {MENU_COLOR_VALUE}{key_name.upper()}{MENU_COLOR_NORMAL}")
+        options.append("Back")
+        draw_menu("Keybinds", options, selected)
+        time.sleep(1/60)
+        try:
+            action = inputs.queue.get_nowait()
+        except queue.Empty:
+            continue
+        if action == "up":
+            selected = (selected - 1) % len(options)
+        elif action == "down":
+            selected = (selected + 1) % len(options)
+        elif action == "back":
+            inputs.menu_mode = False
+            return
+        elif action == "select":
+            if selected == len(options) - 1:
+                inputs.menu_mode = False
+                return
+            the_action = game_actions[selected]
+            inputs.rebinding = True
+            while True:
+                draw_rebind_prompt(the_action)
+                time.sleep(1/60)
+                try:
+                    q = inputs.queue.get_nowait()
+                except queue.Empty:
+                    continue
+                if isinstance(q, tuple) and q[0] == "rebind_key"
+                    new_key = q[1]
+                    if new_key == pygame.K_ESCAPE:
+                        break
+                    old_key = next((k for k, v in config.KEYMAP.items() if v == the_action), None)
+                    if old_key is not None:
+                        del config.KEYMAP[old_key]
+                    config.KEYMAP[new_key] = the_action
+                    inputs.update_config()
+                    save_config()
+                    break
+            inputs.rebinding = False
+
+def run_lose_menu(inputs, score, grade, time_ms):
+    inputs.menu_mode = True
+    selected = 0
+    opti
+
 # need: input parser menu mod, space race (cheese race), main loop integ., setup, lose integ., lose screen for spacerace 
