@@ -39,10 +39,8 @@ Gm - 245 191 3
 
 to add:
 IRS + IHS
-SRS and kick tables
 t spin detection
 rebindable movement controls
 bgm
 sfx
 menu and game over / restart logic
-skill of some kind

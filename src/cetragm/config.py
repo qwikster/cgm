@@ -13,15 +13,41 @@ SDF = 50
 
 KEYMAP = {
     pygame.K_a: "move_left",
+    pygame.K_j: "move_left",
+    pygame.K_LEFT: "move_left",
+
     pygame.K_d: "move_right",
+    pygame.K_l: "move_right",
+    pygame.K_RIGHT: "move_right",
+
     pygame.K_s: "soft_drop",
+    pygame.K_k: "soft_drop",
+    pygame.K_DOWN: "soft_drop",
+
     pygame.K_w: "hard_drop",
-    pygame.K_e: "hold",
-    pygame.K_TAB: "rotate_180",
+    pygame.K_i: "hard_drop",
+    pygame.K_f: "hard_drop",
+
+    pygame.K_c: "rotate_cw",
     pygame.K_SPACE: "rotate_cw",
+    pygame.K_UP: "rotate_cw",
+    pygame.K_SLASH: "rotate_cw",
+    
+    pygame.K_z: "rotate_ccw",
     pygame.K_q: "rotate_ccw",
+    pygame.K_COMMA: "rotate_ccw",
+
+    pygame.K_TAB: "rotate_180",
+    pygame.K_x: "rotate_180",
+    pygame.K_PERIOD: "rotate_180",
+
+    pygame.K_e: "hold",
+    pygame.K_v: "hold",
+
     pygame.K_ESCAPE: "pause",
+    pygame.K_p: "pause",
 }
+ 
 """ # keymap for normal people
 KEYMAP = {
     pygame.K_LEFT: "move_left",
