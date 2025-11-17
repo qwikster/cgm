@@ -13,13 +13,13 @@ from cetragm.bag import Bag
 from cetragm.controls import InputHandler
 from cetragm.srs import rotate_srs
 from cetragm.tables import pieces
+from cetragm import ui
 
 def sigint_handler(sig, frame):
     sigint.set()
     print("\x1b[2j\x1b[Hgoodbye!")
 
 sigint = threading.Event()
-lose = threading.Event()
 board_lock = threading.Lock()
 
 signal.signal(signal.SIGINT, sigint_handler)
@@ -54,7 +54,6 @@ def lock_and_are(player, board, shared):
     shared["board"] = board
     
     if loss:
-        lose.set()
         return "loss", 0.0
     
     player.active_piece = {}
@@ -73,12 +72,10 @@ def lock_now(player, board, shared, bag):
     try:
         board, cleared, loss = lock_piece(player.active_piece, board, player)
     except ValueError:
-        lose.set()
         return "loss"
     shared["board"] = board
     
     if loss:
-        lose.set()
         return "loss"
     
     player.active_piece = {}
@@ -165,8 +162,6 @@ def input_handler(player, board, action, bag, shared, LOCK_DELAY, FRAME):
 def render_loop(shared, player, bag, fps):
     frame_time = 1.0 / fps
     while not sigint.is_set():
-        if lose.is_set():
-            sigint.set()
         with board_lock:
             board = shared["board"]
         
@@ -236,6 +231,8 @@ def game_loop(shared, player, bag, inputs, fps):
                     if lock_timer >= LOCK_DELAY:
                         state, lock_timer = lock_and_are(player, board, shared)
                         if state == "loss":
+                            shared["loss"] = True
+                            sigint.set()
                             return
                         phase_timer = 0.0
                     continue
@@ -246,6 +243,10 @@ def game_loop(shared, player, bag, inputs, fps):
                     player.hold_lock = False
                     if state == "active":
                         player.fall_progress = 0.0
+                    if state == "loss":
+                        shared["loss"] = True
+                        sigint.set()
+                        return
                     break
                 
                 new_minos = get_minos(player.active_piece)
@@ -280,6 +281,8 @@ def game_loop(shared, player, bag, inputs, fps):
                             if lock_timer >= LOCK_DELAY:
                                 state, lock_timer = lock_and_are(player, board, shared)
                                 if state == "loss":
+                                    shared["loss"] = True
+                                    sigint.set()
                                     return
                                 phase_timer = 0.0
                             break
@@ -295,6 +298,8 @@ def game_loop(shared, player, bag, inputs, fps):
                         if lock_timer >= LOCK_DELAY:
                             state, lock_timer = lock_and_are(player, board, shared)
                             if state == "loss":
+                                shared["loss"] = True
+                                sigint.set()
                                 return
                             phase_timer = 0.0
             
@@ -331,25 +336,35 @@ def game_loop(shared, player, bag, inputs, fps):
     inputs.stop()
 
 def entry():
-    player = Player()
-    bag = Bag(preview_size=5)
-    shared = { "board": setup_board(22, 10) }
-    
     inputs = InputHandler()
     inputs.start()
-    
-    try:
-        render_thread = threading.Thread(target=render_loop, args=(shared, player, bag, 60))
-        render_thread.start()
-        
-        game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, inputs, 60))
-        game_thread.start()
-        
-    except KeyboardInterrupt:
-        sigint.set()
-        inputs.stop()
-        game_thread.join()
-        render_thread.join()
+
+    while True:
+        choice = ui.run_main_menu(inputs)
+        if choice == "quit":
+            break
+        # actual game loop
+        while True:
+            player = Player()
+            bag = Bag(preview_size = 5)
+            shared = { "board": setup_board(22, 10), "loss": False }
+            inputs.menu_mode = False
+            
+            render_thread = threading.Thread(target=render_loop, args=(shared, player, bag, 60))
+            render_thread.start()
+            game_thread = threading.Thread(target=game_loop, args=(shared, player, bag, inputs, 60))
+            game_thread.start()
+            
+            render_thread.join()
+            game_thread.join()
+            
+            if not shared["loss"]:
+                break # should never happen
+            
+            retry = ui.run_lose_menu(inputs, player.score, player.grade, player.time_ms)
+            if not retry:
+                break # main menu
+    inputs.stop()
 
 if __name__ == "__main__":    
     try:
