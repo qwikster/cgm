@@ -198,7 +198,7 @@ def run_keybindings_menu(inputs):
                     q = inputs.queue.get_nowait()
                 except queue.Empty:
                     continue
-                if isinstance(q, tuple) and q[0] == "rebind_key"
+                if isinstance(q, tuple) and q[0] == "rebind_key":
                     new_key = q[1]
                     if new_key == pygame.K_ESCAPE:
                         break
@@ -214,6 +214,29 @@ def run_keybindings_menu(inputs):
 def run_lose_menu(inputs, score, grade, time_ms):
     inputs.menu_mode = True
     selected = 0
-    opti
+    options = ["Retry", "Main Menu", "Quit"]
+    while True:
+        draw_lose_screen(score, grade, time_ms, options, selected)
+        time.sleep(1/60)
+        try:
+            action = inputs.queue.get_nowait()
+        except queue.Empty:
+            continue
+        if action == "up":
+            selected = (selected - 1) % len(options)
+        elif action == "down":
+            selected = (selected + 1) % len(options)
+        elif action == "back":
+            inputs.menu_mode = False
+            return False
+        elif action == "select":
+            inputs.menu_modde = False
+            if selected == 0:
+                return True # retry
+            elif selected == 1:
+                return False # menu
+            elif selected == 2:
+                inputs.stop()
+                sys.exit(0)
 
 # need: input parser menu mod, space race (cheese race), main loop integ., setup, lose integ., lose screen for spacerace 
