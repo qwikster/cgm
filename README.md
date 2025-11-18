@@ -3,15 +3,25 @@
 
 A block stacker game that you might find very familiar. Built with similar design to Tetris Grand Master in mind, but runs entirely in your terminal with much more modern mechanics.
 
+What's Tetris Grand Master? It's a really old Japanese arcade franchise that used a lot of nonstandard features and was regarded as being incredibly hard. Your goal is to survive from levels 500 to 999 in 20g (pieces instantly falling to the bottom) and achieve the rank of Grandmaster. Yeah uh... nobody here is doing that, so it's just really hard Tetris. If anyone gets an S1+ rank, DM me @qwik!
+
 ## how
 `pip install cetragm`, or `pipx install cetragm` if you're on an externally managed system like Arch Linux. You may need the `pygame` module if you don't have it or if pip doesn't install it for you. Run `cgm`.
 
-If you'd like to customise your controls, you may change them in `/src/cgm/config.py` under the project directory.
-
-To change DAS (how long until inputs repeat) and ARR (how fast inputs repeat), you'll have to do it under your OS' settings for now. On Windows, it should be under the Mouse and Keyboard controls. On KDE Plasma, under System Settings > Keyboard > Repeat Rate. On Mac, go ask Tim Cook. On Gnome, go ask Richard Stallman's left foot. Otherwise, I'm sure you can figure it out.
-
 ## demo
-https://github.com/user-attachments/assets/2bfdf0e4-c4f9-45e6-83c1-1c018af42be3
+
+
+Additions from last week:
+- Entire UI system
+- Rebindable controls
+- SRS (Super Rotation System)
+- DAS/ARR/SDF customization
+- New input system, allowing said changes
+- Improved game loop
+- Tweaks to difficulty and progression
+
+how does it fit the theme?
+uuh technically the main gameplay of tetris is avoiding SPACEs in your stack... yeah, it's a stretch, but I had no time to do better.
 
 ## what
 Features:
@@ -29,35 +39,19 @@ Features:
 - Proper ARE, lock delay, and line clear delay
 - Real-time gravity (not tied to frame rates)
 - The standard Super Rotation System and all its janky kicks!
+- Full UI system
+- Fixed, fully rebindable controls
 
-Drawbacks:
-- Requires manual ARR/DAS and can't press two keys at once
-- Scoring is slightly off
-- Lack of theming or menus at all, as well as a lose state
-- No sound (background or effect)
-
-To add by next week:
+To add:
 - T-spins and detection for them
 - IHS and IRS (Inital Hold/Rotation System)
-- Full menu with configuration
-- Tiny optional input window via Pygame to add proper multi-key controls and DAS/ARR
-- Config config config! maybe even a new gamemode...
 
 ## controls
-You may configure these in `config.py`, but the defaults (and what I use) follow:
+There's a menu for that! I recommend you pick your own controls - they'll save automatically.
 
-| Buttons | Function | huh |
-| :---------: | :--------: | :---- |
-| `←` `a` `j` | Move Left | |
-| `→` `d` `l` | Move Right | |
-| `↑` `space` `/` `c` | Rotate CW | |
-| `z` `,` `q` | Rotate CCW | |
-| `tab` `x` `.` | Rotate 180 | |
-| `↓` `s` `k` | Soft Drop | move your piece down faster, but don't immediately lock it into place |
-| `w` `i` | Hard Drop  | move your piece as far down as it will go and lock it in place, skipping the delay |
-| `e` `v` | Hold Piece | put a piece aside or switch to your held piece when it doesn't fit |
-| `esc` `p` | quit | why would you ever want to do that? | 
-
+DAS: Delayed Auto Shift, how long until keys start to repeat.\n
+ARR: Auto Repeat Rate, how quickly keys repeat.\n
+SDF: Soft Drop Force, how fast your soft drop key goes down.
 
 ## why
 Built for [Hack Club](https://hack.club)'s [Siege](https://siege.hackclub.com) program (week 10 and 11). Also, I like block stackers.
