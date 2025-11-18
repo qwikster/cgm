@@ -9,7 +9,7 @@ What's Tetris Grand Master? It's a really old Japanese arcade franchise that use
 `pip install cetragm`, or `pipx install cetragm` if you're on an externally managed system like Arch Linux. You may need the `pygame` module if you don't have it or if pip doesn't install it for you. Run `cgm`.
 
 ## demo
-
+[demo.webm](https://github.com/user-attachments/assets/f5ae7127-19af-4149-8a7e-8b8166b38d47)
 
 Additions from last week:
 - Entire UI system
