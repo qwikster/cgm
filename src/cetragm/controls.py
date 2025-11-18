@@ -7,7 +7,7 @@ import time
 import sys
 import os
 
-from cetragm.config import DAS_MS, ARR_MS, SDF, KEYMAP
+from cetragm import config
 
 class InputHandler:
     def __init__(self, keymap=None, window_size = (200, 100), hidden = True):
@@ -16,15 +16,25 @@ class InputHandler:
         self._running = False
         self._pressed = set() # keys to ARR
         self._repeat_state = {} # wait for das or repeat until x
-        self.keymap = keymap or KEYMAP
+        self.keymap = keymap or config.KEYMAP
         self.window_size = window_size
         self.hidden = hidden
         
-        self.DAS = DAS_MS / 1000.0
-        self.ARR = ARR_MS / 1000.0
-        self.SDF = SDF / 1000.0
+        self.DAS = config.DAS_MS / 1000.0
+        self.ARR = config.ARR_MS / 1000.0
+        self.SDF = config.SDF / 1000.0
         
         self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")} # what to apply DAS to
+        
+        self.rebinding = False
+        self.menu_mode = False
+        
+    def update_config(self):
+        self.DAS = config.DAS_MS / 1000.0
+        self.ARR = config.ARR_MS / 1000.0
+        self.SDF = config.SDF    / 1000.0
+        self.keymap = config.KEYMAP
+        self._movement_keys = {k for k, v in self.keymap.items() if v in ("move_left", "move_right")}
         
     def start(self):
         if self._running:
@@ -101,6 +111,21 @@ class InputHandler:
         
         _draw_message()
         
+        menu_key_map = {
+            pygame.K_UP: "up",
+            pygame.K_w: "up",
+            pygame.K_DOWN: "down",
+            pygame.K_s: "down",
+            pygame.K_LEFT: "left",
+            pygame.K_a: "left",
+            pygame.K_RIGHT: "right",
+            pygame.K_d: "right",
+            pygame.K_RETURN: "select",
+            pygame.K_SPACE: "select",
+            pygame.K_ESCAPE: "back",
+            pygame.K_BACKSPACE: "back"
+        }
+        
         last_time = time.monotonic()
         while self._running:
             now = time.monotonic()
@@ -114,6 +139,14 @@ class InputHandler:
                     break
                 if ev.type == pygame.KEYDOWN:
                     key = ev.key
+                    if self.rebinding:
+                        self._enqueue(("rebind_key", key))
+                        continue
+                    if self.menu_mode:
+                        action = menu_key_map.get(key)
+                        if action:
+                            self._enqueue(action)
+                        continue
                     was_down = key in self._pressed
                     self._pressed.add(key)
                     
@@ -134,7 +167,11 @@ class InputHandler:
                         self._pressed.remove(key)
                     if key in self._repeat_state:
                         del self._repeat_state[key]
-                        
+            
+            if self.menu_mode or self.rebinding:
+                time.sleep(0.01)
+                continue
+            
             now = time.monotonic()
             for key, st in list(self._repeat_state.items()):
                 action = self.keymap.get(key)
@@ -147,20 +184,19 @@ class InputHandler:
                         st["next_repeat"] = now + self.ARR
                         self._repeat_state[key] = st
                         
-            sd_keys = [k for k in self._pressed if self.keymap.get(k) == "soft_drop"]
+            sd_keys = any(self.keymap.get(k) == "soft_drop" for k in self._pressed)
             if sd_keys:
                 key = "__soft_drop__"
                 st = self._repeat_state.get(key)
                 
                 if st is None:
                     self._enqueue("soft_drop")
-                    self._repeat_state[key] = {
-                        "next_repeat": now + self.SDF
-                    }
+                    next_t = now + max(self.SDF, 0.012)
+                    self._repeat_state[key] = { "next_repeat": next_t}
                 else:
                     if now >= st["next_repeat"]:
                         self._enqueue("soft_drop")
-                        st["next_repeat"] = now + self.SDF
+                        st["next_repeat"] += self.SDF
             else:
                 self._repeat_state.pop("__soft_drop__", None)
                     

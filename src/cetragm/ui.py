@@ -6,9 +6,9 @@ import queue
 
 from cetragm import config
 
-MENU_COLOR_SELECTED = "\x1b;38;2;127;255;212m"
-MENU_COLOR_NORMAL   = "\x1b;38;2;220;220;220m"
-MENU_COLOR_VALUE    = "\x1b;38;2;13;152;186m"
+MENU_COLOR_SELECTED = "\x1b[38;2;127;255;212m"
+MENU_COLOR_NORMAL   = "\x1b[38;2;220;220;220m"
+MENU_COLOR_VALUE    = "\x1b[38;2;13;152;186m"
 
 def center_lines(lines):
     term = shutil.get_terminal_size()
@@ -17,14 +17,14 @@ def center_lines(lines):
     pad_y = max((term.lines - len(lines)) // 2, 0)
     centered = ("\n" * pad_y) + "\n".join(" " * pad_x + ln for ln in lines)
     sys.stdout.write("\x1b[H\x1b[2J" + centered + "\n\n")
-    sys.stdout.flush
+    sys.stdout.flush()
 
 def draw_menu(title, options, selected):
-    width = max(len(opt) for opt in options)
+    width = max(len(opt) for opt in options) + 6
     lines = []
     lines.append("╭" + "─" * (width - 2) + "╮")
     lines.append("│" + title.center(width - 2) + "│")
-    lines.append("├" + "─" * (width - 2) + "│")
+    lines.append("├" + "─" * (width - 2) + "┤")
 
     for i, opt in enumerate(options):
         color = MENU_COLOR_SELECTED if i == selected else MENU_COLOR_NORMAL
@@ -48,6 +48,7 @@ def draw_lose_screen(score, grade, time_ms, options, selected):
         reset = MENU_COLOR_NORMAL if i == selected else ""
         lines.append("│" + color + opt.center(18) + reset + "│")
     lines.append( "╰──────────────────╯")
+    center_lines(lines)
 
 def format_time(ms: int) -> str:
     return f"{((ms // 1000) // 60):02}:{((ms // 1000) % 60):02}:{((ms % 1000) // 10):02}"
@@ -65,7 +66,7 @@ def draw_rebind_prompt(action_name):
     center_lines(lines)
 
 def save_config():
-    with open("config.py", "w") as f:
+    with open(config.__file__, "w") as f:
         f.write( "import pygame\n\n")
         f.write(f"MAX_LOCK_RESETS = {config.MAX_LOCK_RESETS}\n")
         f.write(f"ARE_FRAMES = {config.ARE_FRAMES}\n")
@@ -75,15 +76,19 @@ def save_config():
         f.write(f"ARR_MS = {config.ARR_MS}\n")
         f.write(f"SDF = {config.SDF}\n")
         f.write( "KEYMAP = {\n")
-        for key,value in config.KEYMAP.items():
+        for key, value in config.KEYMAP.items():
             key_name = pygame.key.name(key)
-            f.write(f"    pygame.K_{key_name}: \"{value}\",\n")
+            if len(key_name) == 1 and key_name.isalpha():
+                const_name = key_name.lower()
+            else:
+                const_name = key_name.upper()
+            f.write(f"    pygame.K_{const_name}: \"{value}\",\n")
         f.write("}\n")
 
 def run_main_menu(inputs):
     inputs.menu_mode = True
     selected = 0
-    options = ["Play", "Space Race", "Settings", "Quit"]
+    options = ["Play", "Settings", "Quit"]
     while True:
         draw_menu("CGM", options, selected)
         time.sleep(1/60)
@@ -100,10 +105,9 @@ def run_main_menu(inputs):
             if selected == 0:
                 return "play"
             elif selected == 1:
-                return "spacerace"
-            elif selected == 2:
                 run_settings_menu(inputs)
-            elif selected == 3:
+                inputs.menu_mode = True
+            elif selected == 2:
                 return "quit"
         elif action == "back":
             inputs.menu_mode = False
@@ -116,13 +120,13 @@ def run_settings_menu(inputs):
     while True:
         options = [
             f"DAS: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
-            f"ARR: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
-            f"SDF: {MENU_COLOR_VALUE}{config.DAS_MS}{MENU_COLOR_NORMAL} ms",
+            f"ARR: {MENU_COLOR_VALUE}{config.ARR_MS}{MENU_COLOR_NORMAL} ms",
+            f"SDF: {MENU_COLOR_VALUE}{config.SDF}{MENU_COLOR_NORMAL} ms",
             "Key Bindings",
             "Back"
         ]
         draw_menu("Settings", options, selected)
-        time.sleep(1/60)
+        time.sleep(1/10)
         try:
             action = inputs.queue.get_nowait()
         except queue.Empty:
@@ -137,6 +141,7 @@ def run_settings_menu(inputs):
         elif action == "select":
             if selected == 3:
                 run_keybindings_menu(inputs)
+                inputs.menu_mode = True
             elif selected == 4:
                 inputs.menu_mode = False
                 return
@@ -145,7 +150,7 @@ def run_settings_menu(inputs):
             if selected == 0:
                 config.DAS_MS = max(0, config.DAS_MS + adj)
             elif selected == 1:
-                config.ARR_MS == max(0, config.ARR_MS + adj)
+                config.ARR_MS = max(0, config.ARR_MS + adj)
             elif selected == 2:
                 config.SDF = max(0, config.SDF + adj)
             inputs.update_config() # to add
@@ -155,7 +160,7 @@ def run_settings_menu(inputs):
             if selected == 0:
                 config.DAS_MS = max(0, config.DAS_MS + adj)
             elif selected == 1:
-                config.ARR_MS == max(0, config.ARR_MS + adj)
+                config.ARR_MS = max(0, config.ARR_MS + adj)
             elif selected == 2:
                 config.SDF = max(0, config.SDF + adj)
             inputs.update_config() # to add
@@ -230,7 +235,7 @@ def run_lose_menu(inputs, score, grade, time_ms):
             inputs.menu_mode = False
             return False
         elif action == "select":
-            inputs.menu_modde = False
+            inputs.menu_mode = False
             if selected == 0:
                 return True # retry
             elif selected == 1:

@@ -17,7 +17,6 @@ from cetragm import ui
 
 def sigint_handler(sig, frame):
     sigint.set()
-    print("\x1b[2j\x1b[Hgoodbye!")
 
 sigint = threading.Event()
 board_lock = threading.Lock()
@@ -331,10 +330,7 @@ def game_loop(shared, player, bag, inputs, fps):
         elapsed_loop = time.perf_counter() - now
         to_sleep = FRAME - elapsed_loop
         time.sleep(to_sleep if to_sleep > 0 else 0)
-        
-    # sigint
-    inputs.stop()
-
+    
 def entry():
     inputs = InputHandler()
     inputs.start()
@@ -357,6 +353,7 @@ def entry():
             
             render_thread.join()
             game_thread.join()
+            sigint.clear()
             
             if not shared["loss"]:
                 break # should never happen
