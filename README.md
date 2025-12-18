@@ -52,6 +52,3 @@ There's a menu for that! I recommend you pick your own controls - they'll save a
 DAS: Delayed Auto Shift, how long until keys start to repeat.\n
 ARR: Auto Repeat Rate, how quickly keys repeat.\n
 SDF: Soft Drop Force, how fast your soft drop key goes down.
-
-## why
-Built for [Hack Club](https://hack.club)'s [Siege](https://siege.hackclub.com) program (week 10 and 11). Also, I like block stackers.
